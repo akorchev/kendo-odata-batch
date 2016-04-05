@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Untitled</title>
+
+    <link rel="stylesheet" href="http://kendo.cdn.telerik.com/2016.1.226/styles/kendo.common.min.css">
+    <link rel="stylesheet" href="http://kendo.cdn.telerik.com/2016.1.226/styles/kendo.rtl.min.css">
+    <link rel="stylesheet" href="http://kendo.cdn.telerik.com/2016.1.226/styles/kendo.default.min.css">
+    <link rel="stylesheet" href="http://kendo.cdn.telerik.com/2016.1.226/styles/kendo.mobile.all.min.css">
+
+    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="http://kendo.cdn.telerik.com/2016.1.226/js/angular.min.js"></script>
+    <script src="http://kendo.cdn.telerik.com/2016.1.226/js/jszip.min.js"></script>
+    <script src="http://kendo.cdn.telerik.com/2016.1.226/js/kendo.all.min.js"></script>
+    <script src="http://kendo.cdn.telerik.com/2016.1.226/js/kendo.aspnetmvc.min.js"></script>
+  </head>
+  <body>
+    <div id="grid"></div>
+    <script>
+      $('#grid').kendoGrid({
+        editable: 'inline',
+        columns: [
+          {
+            field: 'Name'
+          },
+          {
+            field: 'Description'
+          },
+          {
+            command: ['edit']
+          }
+        ],
+        dataSource: {
+          type: 'odata-v4',
+          schema: {
+            model: {
+              id: 'ID'
+            },
+            data: function(d) {
+              return d.value.map(function(item) {
+                return item;
+              })
+            }
+          },
+          transport: {
+            read: {
+              url: 'http://services.odata.org/V4/OData/(S(jbzmr5eiwkdsqvimywp3vtic))/OData.svc/Products'
+            },
+            update: {
+              url: function(d) {
+                return '/V4/OData/(S(jbzmr5eiwkdsqvimywp3vtic))/OData.svc/Products(' + d.ID + ')'
+              }
+            },
+            parameterMap(options, type) {
+              if (type == 'update') {
+                options['@odata.type'] = '#ODataDemo.FeaturedProduct';
+
+                return kendo.data.transports['odata-v4'].parameterMap(options, type);
+              }
+            }
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

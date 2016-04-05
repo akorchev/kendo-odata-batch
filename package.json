@@ -1,0 +1,16 @@
+{
+  "name": "odata-proxy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.13.4",
+    "http-proxy": "^1.13.2",
+    "redbird": "^0.4.14"
+  }
+}
