@@ -14,12 +14,13 @@
     <script src="http://kendo.cdn.telerik.com/2016.1.226/js/jszip.min.js"></script>
     <script src="http://kendo.cdn.telerik.com/2016.1.226/js/kendo.all.min.js"></script>
     <script src="http://kendo.cdn.telerik.com/2016.1.226/js/kendo.aspnetmvc.min.js"></script>
-    <script src="/static/kendo.data.odata-v4-batch.js"></script>
+    <script src="/static/kendo.data.odata-batch.js"></script>
   </head>
   <body>
-    <div id="grid"></div>
+    <h3>OData v4</h3>
+    <div id="grid-v4"></div>
     <script>
-      $('#grid').kendoGrid({
+      $('#grid-v4').kendoGrid({
         editable: true,
         toolbar: ['create', 'save', 'cancel'],
         columns: [
@@ -62,6 +63,60 @@
             destroy: {
               url: function(item) {
                 return "http://services.odata.org/V4/(S(lqkaw1wt5qdcwrj1stniy0nc))/TripPinServiceRW/Airlines('" + item.AirlineCode + "')";
+              }
+            }
+          }
+        }
+      });
+    </script>
+    <h3>OData v3</h3>
+    <div id="grid-v3"></div>
+    <script>
+      $('#grid-v3').kendoGrid({
+        editable: true,
+        toolbar: ['create', 'save', 'cancel'],
+        columns: [
+          {
+            field: 'Name'
+          },
+          {
+            field: 'Description'
+          },
+          {
+            command: ['destroy']
+          }
+        ],
+        pageable: true,
+        dataSource: {
+          type: 'odata-v3',
+          batch: true,
+          pageSize: 5,
+          serverPaging: true,
+          schema: {
+            model: {
+              id: 'ID'
+            },
+            fields: {
+              Name: { required: true },
+              AirlineCode: { required: true }
+            }
+          },
+          transport: {
+            read: {
+              url: '/V3/(S(yitdh0a2uf2jbt4a0hc24ns1))/OData/OData.svc/Products',
+              dataType: 'json'
+            },
+            create: {
+              url: "http://services.odata.org/V3/(S(yitdh0a2uf2jbt4a0hc24ns1))/OData/OData.svc/Products"
+            },
+            update: {
+              url: function(item) {
+                return "http://services.odata.org/V3/(S(yitdh0a2uf2jbt4a0hc24ns1))/OData/OData.svc/Products(" + item.ID + ")";
+              }
+            },
+            destroy: {
+              url: function(item) {
+                return "http://services.odata.org/V3/(S(yitdh0a2uf2jbt4a0hc24ns1))/OData/OData.svc/Products(" + item.ID + ")";
               }
             }
           }
