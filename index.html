@@ -14,49 +14,54 @@
     <script src="http://kendo.cdn.telerik.com/2016.1.226/js/jszip.min.js"></script>
     <script src="http://kendo.cdn.telerik.com/2016.1.226/js/kendo.all.min.js"></script>
     <script src="http://kendo.cdn.telerik.com/2016.1.226/js/kendo.aspnetmvc.min.js"></script>
+    <script src="/static/kendo.data.odata-v4-batch.js"></script>
   </head>
   <body>
     <div id="grid"></div>
     <script>
       $('#grid').kendoGrid({
-        editable: 'inline',
+        editable: true,
+        toolbar: ['create', 'save', 'cancel'],
         columns: [
           {
             field: 'Name'
           },
           {
-            field: 'Description'
+            field: 'AirlineCode'
           },
           {
-            command: ['edit']
+            command: ['destroy']
           }
         ],
+        sortable: true,
         dataSource: {
           type: 'odata-v4',
+          batch: true,
+          serverSorting: true,
           schema: {
             model: {
-              id: 'ID'
+              id: 'AirlineCode'
             },
-            data: function(d) {
-              return d.value.map(function(item) {
-                return item;
-              })
+            fields: {
+              Name: { required: true },
+              AirlineCode: { required: true }
             }
           },
           transport: {
             read: {
-              url: 'http://services.odata.org/V4/OData/(S(jbzmr5eiwkdsqvimywp3vtic))/OData.svc/Products'
+              url: '/V4/(S(lqkaw1wt5qdcwrj1stniy0nc))/TripPinServiceRW/Airlines'
+            },
+            create: {
+              url: "http://services.odata.org/V4/(S(lqkaw1wt5qdcwrj1stniy0nc))/TripPinServiceRW/Airlines"
             },
             update: {
-              url: function(d) {
-                return '/V4/OData/(S(jbzmr5eiwkdsqvimywp3vtic))/OData.svc/Products(' + d.ID + ')'
+              url: function(item) {
+                return "http://services.odata.org/V4/(S(lqkaw1wt5qdcwrj1stniy0nc))/TripPinServiceRW/Airlines('" + item.AirlineCode + "')";
               }
             },
-            parameterMap(options, type) {
-              if (type == 'update') {
-                options['@odata.type'] = '#ODataDemo.FeaturedProduct';
-
-                return kendo.data.transports['odata-v4'].parameterMap(options, type);
+            destroy: {
+              url: function(item) {
+                return "http://services.odata.org/V4/(S(lqkaw1wt5qdcwrj1stniy0nc))/TripPinServiceRW/Airlines('" + item.AirlineCode + "')";
               }
             }
           }
