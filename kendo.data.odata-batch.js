@@ -19,6 +19,7 @@
       /* Don't care about content type for requests that have no body. */
       if (noBody.indexOf(t) < 0) {
         body.push('Content-Type: ' + (d.contentType || 'application/json; charset=utf-8'));
+        body.push('Accept: ' + (d.contentType || 'application/json; charset=utf-8'));
       }
 
       body.push('Host: ' + location.host);
@@ -32,33 +33,41 @@
   }
 
   function unpack (xhr, status, complete) {
-    var lines = xhr.responseText.split('\r\n'),
-      boundary = lines[3], data = [], d = null;
+    var response = xhr.responseText;
 
-    console.log(lines)
+    var boundary = '--' + /boundary=(.*)/.exec(response)[1];
 
-    $.each(lines, function (i, l) {
-      if (l.length) {
-        if (l.indexOf(boundary) == 0) {
-          if (d) data.push(d);
-          d = {};
-        } else if (d) {
-          if (!d.status) {
-            d.status = parseInt((function (m) {
-              return m || [0, 0];
-            })(/HTTP\/1.1 ([0-9]+)/g.exec(l))[1], 10);
-          } else if (!d.data) {
-            try {
-              d.data = JSON.parse(l);
-            } catch (ex) {
-              d.data = l;
-            }
-          }
+    var payload = response.substring(response.indexOf(boundary))
 
-          if (d.status >= 400) {
-            status = 'error';
-          }
+    payload = $.trim(payload.substring(0, payload.indexOf(boundary + '--')))
+
+    var responses = payload.split(boundary);
+
+    var data = [];
+
+    responses.forEach(function(response) {
+      var lines = response.split('\r\n\r\n');
+
+      if (lines.length > 1) {
+        var item = {
+          data: null
+        };
+
+        item.status = parseInt((function (m) {
+          return m || [0, 0];
+        })(/HTTP\/1.1 ([0-9]+)/g.exec(lines[1]))[1], 10);
+
+        if (item.status >= 400) {
+          status = 'error';
         }
+
+        try {
+          item.data = JSON.parse(lines[2])
+        } catch (error) {
+          item.data = lines[2];
+        }
+
+        data.push(item)
       }
     });
 
@@ -119,7 +128,6 @@
           e.success([], "update");
           e.success([], "destroy");
         } else {
-          console.log(response);
           e.error(response);
         }
       }
@@ -134,7 +142,7 @@
   });
 
   function data(d) {
-    var data = d.value || data;
+    var data = d.value || d;
 
     if (!$.isArray(data)) {
       data = [data];

@@ -78,6 +78,9 @@
         toolbar: ['create', 'save', 'cancel'],
         columns: [
           {
+            field: 'ID'
+          },
+          {
             field: 'Name'
           },
           {
@@ -95,17 +98,20 @@
           serverPaging: true,
           schema: {
             model: {
-              id: 'ID'
+              id: 'ID',
+              fields: {
+                ID: { type: 'number', required: true, defaultValue: null }
+              }
             }
           },
           transport: {
             type: 'ODataDemo.Product',
             read: {
-              url: '/V3/(S(mkoepnkg2qkcco01v24rjwk2))/OData/OData.svc/Products',
+              url: '/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData.svc/Products',
               dataType: 'json'
             },
             create: {
-              url: "http://services.odata.org/V3/(S(mkoepnkg2qkcco01v24rjwk2))/OData/OData.svc/Products"
+              url: "http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData.svc/Products"
             },
             update: {
               url: function(item) {
@@ -114,7 +120,7 @@
             },
             destroy: {
               url: function(item) {
-                return "http://services.odata.org/V3/(S(mkoepnkg2qkcco01v24rjwk2))/OData/OData.svc/Products(" + item.ID + ")";
+                return "http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData.svc/Products(" + item.ID + ")";
               }
             }
           }
