@@ -10,7 +10,6 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.13.4",
-    "http-proxy": "^1.13.2",
-    "redbird": "^0.4.14"
+    "http-proxy": "^1.13.2"
   }
 }

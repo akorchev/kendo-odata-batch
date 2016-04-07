@@ -14,6 +14,7 @@
     <script src="http://kendo.cdn.telerik.com/2016.1.226/js/jszip.min.js"></script>
     <script src="http://kendo.cdn.telerik.com/2016.1.226/js/kendo.all.min.js"></script>
     <script src="http://kendo.cdn.telerik.com/2016.1.226/js/kendo.aspnetmvc.min.js"></script>
+    <script src="/lib/o.js/o.js"></script>
     <script src="/static/kendo.data.odata-batch.js"></script>
   </head>
   <body>
@@ -95,28 +96,25 @@
           schema: {
             model: {
               id: 'ID'
-            },
-            fields: {
-              Name: { required: true },
-              AirlineCode: { required: true }
             }
           },
           transport: {
+            type: 'ODataDemo.Product',
             read: {
-              url: '/V3/(S(yitdh0a2uf2jbt4a0hc24ns1))/OData/OData.svc/Products',
+              url: '/V3/(S(mkoepnkg2qkcco01v24rjwk2))/OData/OData.svc/Products',
               dataType: 'json'
             },
             create: {
-              url: "http://services.odata.org/V3/(S(yitdh0a2uf2jbt4a0hc24ns1))/OData/OData.svc/Products"
+              url: "http://services.odata.org/V3/(S(mkoepnkg2qkcco01v24rjwk2))/OData/OData.svc/Products"
             },
             update: {
               url: function(item) {
-                return "http://services.odata.org/V3/(S(yitdh0a2uf2jbt4a0hc24ns1))/OData/OData.svc/Products(" + item.ID + ")";
+                return "Products(" + item.ID + ")";
               }
             },
             destroy: {
               url: function(item) {
-                return "http://services.odata.org/V3/(S(yitdh0a2uf2jbt4a0hc24ns1))/OData/OData.svc/Products(" + item.ID + ")";
+                return "http://services.odata.org/V3/(S(mkoepnkg2qkcco01v24rjwk2))/OData/OData.svc/Products(" + item.ID + ")";
               }
             }
           }

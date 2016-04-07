@@ -1,13 +1,18 @@
 (function ($, kendo) {
   function pack(data, boundary) {
     var body = [];
+    var changeset = kendo.guid();
+
+    body.push('--batch_' + boundary);
+    body.push('Content-Type: multipart/mixed; boundary=changeset_' + changeset, '');
 
     $.each(data, function (i, d) {
       var t = d.type.toUpperCase(), noBody = ['GET', 'DELETE'];
 
-      body.push('--batch_' + boundary);
+      body.push('--changeset_' + changeset);
       body.push('Content-Type: application/http');
-      body.push('Content-Transfer-Encoding: binary', '');
+      body.push('Content-Transfer-Encoding: binary');
+      body.push('Content-ID:' + i + 1, '');
 
       body.push(t + ' ' + d.url + ' HTTP/1.1');
 
@@ -20,6 +25,7 @@
       body.push('', d.data ? JSON.stringify(d.data) : '');
     });
 
+    body.push('--changeset_' + changeset + '--', '');
     body.push('--batch_' + boundary + '--', '');
 
     return body.join('\r\n');
@@ -27,32 +33,40 @@
 
   function unpack (xhr, status, complete) {
     var lines = xhr.responseText.split('\r\n'),
-      boundary = lines[0], data = [], d = null;
+      boundary = lines[3], data = [], d = null;
 
-      $.each(lines, function (i, l) {
-        if (l.length) {
-          if (l.indexOf(boundary) == 0) {
-            if (d) data.push(d);
-            d = {};
-          } else if (d) {
-            if (!d.status) {
-              d.status = parseInt((function (m) {
-                return m || [0, 0];
-              })(/HTTP\/1.1 ([0-9]+)/g.exec(l))[1], 10);
-            } else if (!d.data) {
-              try {
-                d.data = JSON.parse(l);
-              } catch (ex) { }
+    console.log(lines)
+
+    $.each(lines, function (i, l) {
+      if (l.length) {
+        if (l.indexOf(boundary) == 0) {
+          if (d) data.push(d);
+          d = {};
+        } else if (d) {
+          if (!d.status) {
+            d.status = parseInt((function (m) {
+              return m || [0, 0];
+            })(/HTTP\/1.1 ([0-9]+)/g.exec(l))[1], 10);
+          } else if (!d.data) {
+            try {
+              d.data = JSON.parse(l);
+            } catch (ex) {
+              d.data = l;
             }
           }
-        }
-      });
 
-      complete.call(this, xhr, status, data);
+          if (d.status >= 400) {
+            status = 'error';
+          }
+        }
+      }
+    });
+
+    complete.call(this, xhr, status, data);
   }
 
   function ajaxBatch(params) {
-    var boundary = new Date().getTime().toString();
+    var boundary = kendo.guid();
 
     $.ajax({
       type: 'POST',
@@ -67,11 +81,15 @@
 
   var odata = kendo.data.transports['odata-v4'];
 
-  function enqueue(items, type, url) {
+  function enqueue(items, verb, url, type) {
     return items.map(function(item) {
+      if (type) {
+        item['odata.type'] = type;
+      }
+
       return {
         data: item,
-        type: type,
+        type: verb,
         url: typeof url == 'function' ? url(item) : url
       }
     });
@@ -79,12 +97,12 @@
 
   function submit(e) {
     var requests = [].concat(
-      enqueue(e.data.created, 'POST', this.options.create.url),
-      enqueue(e.data.updated, 'PUT', this.options.update.url),
+      enqueue(e.data.created, 'POST', this.options.create.url, this.options.type),
+      enqueue(e.data.updated, 'PUT', this.options.update.url, this.options.type),
       enqueue(e.data.destroyed, 'DELETE', this.options.destroy.url)
     );
 
-    var batchUrl = this.options.read.url.substring(0, this.options.read.url.lastIndexOf('/')) + '/$batch';
+    var batchUrl = this.options.batchUrl || this.options.read.url.substring(0, this.options.read.url.lastIndexOf('/')) + '/$batch'
 
     ajaxBatch({
       url: batchUrl,
@@ -101,6 +119,7 @@
           e.success([], "update");
           e.success([], "destroy");
         } else {
+          console.log(response);
           e.error(response);
         }
       }
@@ -121,17 +140,21 @@
       data = [data];
     }
 
-    return data.map(function(item) {
-      var clone = {};
+    return data.map(strip);
+  }
 
-      for (var key in item) {
-        if (key.indexOf('@odata') < 0) {
-          clone[key] = item[key];
-        }
+  function strip(item) {
+    var clone = {};
+
+    for (var key in item) {
+      if (key.indexOf('odata') >= 0) {
+        continue;
       }
 
-      return clone;
-    })
+      clone[key] = item[key];
+    }
+
+    return clone;
   }
 
   kendo.data.schemas['odata-v4'].data = data;
