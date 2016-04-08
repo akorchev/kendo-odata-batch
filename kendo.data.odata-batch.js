@@ -97,6 +97,15 @@
                 item['odata.type'] = type;
             }
 
+            for (var key in item) {
+              var value = item[key];
+
+              // Convert numbers to strings to handle Edm.Decimal
+              if (typeof value === 'number') {
+                item[key] = value + '';
+              }
+            }
+
             return {
                 data: item,
                 type: verb,
@@ -126,8 +135,8 @@
                     })
 
                     e.success(create, 'create');
-                    e.success([], "update");
-                    e.success([], "destroy");
+                    e.success([], 'update');
+                    e.success([], 'destroy');
                 } else {
                     e.error(response);
                 }
@@ -170,24 +179,12 @@
 
     kendo.data.transports['odata'] = kendo.data.RemoteTransport.extend({
         init: function (options) {
-            kendo.data.RemoteTransport.fn.init.call(this, $.extend({}, odata, options, {
-                parameterMap: this.parameterMap
-            }));
+            kendo.data.RemoteTransport.fn.init.call(this, $.extend({}, odata, options));
         },
-        submit: submit,
-        parameterMap: function (options, type) {
-            var result = odata.parameterMap(options, type);
-
-            if (type == 'read') {
-                if (result['$count'] == true) {
-                    delete result['$count'];
-                    result['$inlinecount'] = 'allpages';
-                }
-            }
-
-            return result;
-        }
+        submit: submit
     });
+
+    kendo.data.transports['odata'].parameterMap = odata.parameterMap;
 
     kendo.data.schemas['odata'] = {
         type: 'json',
