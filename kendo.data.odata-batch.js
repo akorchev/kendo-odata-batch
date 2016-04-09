@@ -172,7 +172,10 @@
         init: function (options) {
             kendo.data.RemoteTransport.fn.init.call(this, $.extend({}, odata4, options));
         },
-        submit: submit
+        submit: submit,
+        setBatchDetails: function (batchUrl) {
+            this.options.batchUrl = batchUrl;
+        }
     });
 
     kendo.data.schemas['odata-v4'].data = data;
@@ -181,7 +184,11 @@
         init: function (options) {
             kendo.data.RemoteTransport.fn.init.call(this, $.extend({}, odata, options));
         },
-        submit: submit
+        submit: submit,
+        setBatchDetails: function (batchUrl, objectType) {
+            this.options.batchUrl = batchUrl;
+            this.options.type = objectType;
+        }
     });
 
     kendo.data.transports['odata'].parameterMap = odata.parameterMap;
