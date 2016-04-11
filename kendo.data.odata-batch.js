@@ -33,6 +33,10 @@
     }
 
     function unpack(xhr, status, complete) {
+        if (status != 'success') {
+          return complete.call(this, xhr, status, xhr.responseText);
+        }
+
         var response = xhr.responseText;
 
         var boundary = '--' + /boundary=(.*)/.exec(response)[1];
@@ -138,7 +142,7 @@
                     e.success([], 'update');
                     e.success([], 'destroy');
                 } else {
-                    e.error(response);
+                    e.error(xhr, status, response);
                 }
             }
         })
