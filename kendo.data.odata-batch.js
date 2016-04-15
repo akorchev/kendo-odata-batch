@@ -174,7 +174,7 @@
 
     kendo.data.transports['odata-v4'] = kendo.data.RemoteTransport.extend({
         init: function (options) {
-            kendo.data.RemoteTransport.fn.init.call(this, $.extend({}, odata4, options));
+            kendo.data.RemoteTransport.fn.init.call(this, $.extend(true, {}, odata4, options));
         },
         submit: submit,
         setBatchDetails: function (batchUrl) {
@@ -186,7 +186,7 @@
 
     kendo.data.transports['odata'] = kendo.data.RemoteTransport.extend({
         init: function (options) {
-            kendo.data.RemoteTransport.fn.init.call(this, $.extend({}, odata, options));
+            kendo.data.RemoteTransport.fn.init.call(this, $.extend(true, {}, odata, options));
         },
         submit: submit,
         setBatchDetails: function (batchUrl, objectType) {
