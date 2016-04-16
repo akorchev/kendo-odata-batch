@@ -8,7 +8,7 @@ The endpoint of the OData service is either set via the `batchUrl` option or det
 
 > The original v2 'odata' transport is replaced with a v3 one.
 
-## Running the demo
+## Running the tests
 
 1. Make sure NodeJS is installed
 2. Clone the repository
