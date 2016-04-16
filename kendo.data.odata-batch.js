@@ -34,47 +34,54 @@
         return body.join('\r\n');
     }
 
-    function unpack(xhr, status, complete) {
+    function unpack(xhr, status, params) {
+        var complete = params.complete;
+        var requests = params.data;
+
         if (status != 'success') {
           return complete.call(this, xhr, status, xhr.responseText);
         }
 
-        var response = xhr.responseText;
+        var responseText = xhr.responseText;
 
-        var boundary = '--' + /boundary=(.*)/.exec(response)[1];
+        var matcher = /--changesetresponse_(.*)/g;
 
-        var payload = response.substring(response.indexOf(boundary))
+        var match;
 
-        payload = $.trim(payload.substring(0, payload.indexOf(boundary + '--')))
+        var responses = []
 
-        var responses = payload.split(boundary);
+        while (match = matcher.exec(responseText)) {
+            var start = match.index + match[0].length;
 
-        var data = [];
+            match = matcher.exec(responseText);
 
-        responses.forEach(function (response) {
+            if (match) {
+              var end = match.index;
+
+              var response = $.trim(responseText.substring(start, end));
+
+              responses.push(response);
+            }
+        }
+
+        var data = requests.map(function(request, index) {
+            var response = responses[index];
+
             var lines = response.split('\r\n\r\n');
 
-            if (lines.length > 1) {
-                var item = {
-                    data: null
-                };
+            var result = {};
 
-                item.status = parseInt((function (m) {
-                    return m || [0, 0];
-                })(/HTTP\/1.1 ([0-9]+)/g.exec(lines[1]))[1], 10);
+            result.status = parseInt((function (m) {
+                return m || [0, 0];
+            })(/HTTP\/1.1 ([0-9]+)/g.exec(lines[1]))[1], 10);
 
-                if (item.status >= 400) {
-                    status = 'error';
-                }
-
-                try {
-                    item.data = JSON.parse(lines[2])
-                } catch (error) {
-                    item.data = lines[2];
-                }
-
-                data.push(item)
+            try {
+                result.data = JSON.parse(lines[2])
+            } catch (error) {
+                result.data = lines[2];
             }
+
+            return result;
         });
 
         complete.call(this, xhr, status, data);
@@ -89,7 +96,7 @@
             data: pack(params.data, boundary),
             contentType: 'multipart/mixed; boundary=batch_' + boundary,
             complete: params.complete ?
-              function (xnr, status) { unpack(xnr, status, params.complete); } :
+              function (xhr, status) { unpack(xhr, status, params); } :
                 null
         });
     }
@@ -141,6 +148,7 @@
                     })
 
                     e.success(create, 'create');
+
                     e.success([], 'update');
                     e.success([], 'destroy');
                 } else {
