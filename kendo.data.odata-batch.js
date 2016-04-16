@@ -64,7 +64,14 @@
             }
         }
 
-        var data = requests.map(function(request, index) {
+        var data = {
+          created: [],
+          updated: [],
+          destroyed: [],
+          errors: []
+        };
+
+        requests.forEach(function(request, index) {
             var response = responses[index];
 
             var lines = response.split('\r\n\r\n');
@@ -81,7 +88,16 @@
                 result.data = lines[2];
             }
 
-            return result;
+            if (request.type == 'POST') {
+                if (result.status == 201) {
+                    data.created.push(result.data);
+                } else {
+                    data.created.push(null);
+                }
+            }
+            if (result.status >= 400) {
+              data.errors.push(result.data);
+            }
         });
 
         complete.call(this, xhr, status, data);
@@ -141,16 +157,13 @@
             data: requests,
             complete: function (xhr, status, response) {
                 if (status == 'success') {
-                    var create = response.filter(function (item) {
-                        return item.status == 201;
-                    }).map(function (item) {
-                        return item.data;
-                    })
+                    e.success(response.created, 'create')
+                    e.success(response.updated, 'update');
+                    e.success(response.destroyed, 'destroy');
 
-                    e.success(create, 'create');
-
-                    e.success([], 'update');
-                    e.success([], 'destroy');
+                    if (response.errors.length) {
+                        e.error(xhr, 'error', response.errors);
+                    }
                 } else {
                     e.error(xhr, status, response);
                 }
