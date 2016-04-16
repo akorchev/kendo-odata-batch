@@ -1,5 +1,5 @@
 (function ($, kendo) {
-    function pack(data, boundary) {
+    function pack(data, boundary, useTransaction) {
         var body = [];
         var changeset = kendo.guid();
 
@@ -35,7 +35,7 @@
         return body.join('\r\n');
     }
 
-    function unpack(xhr, status, params) {
+    function unpack(xhr, status, params, useTransaction) {
         var complete = params.complete;
         var requests = params.data;
 
@@ -206,7 +206,8 @@
         submit: submit,
         setBatchDetails: function (batchUrl) {
             this.options.batchUrl = batchUrl;
-        }
+        },
+        useTransaction: false
     });
 
     kendo.data.schemas['odata-v4'].data = data;
@@ -219,7 +220,8 @@
         setBatchDetails: function (batchUrl, objectType) {
             this.options.batchUrl = batchUrl;
             this.options.type = objectType;
-        }
+        },
+        useTransaction: false
     });
 
     kendo.data.transports['odata'].parameterMap = odata.parameterMap;
