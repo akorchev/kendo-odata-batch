@@ -1,92 +1,11 @@
+var BATCH_URL = 'http://example.com';
+
 describe('OData v3', function() {
     var OdataTransport = kendo.data.transports.odata;
-    var BATCH_URL = 'http://example.com';
 
-    it('supports submit', function() {
-        var odata = new OdataTransport();
+    var odata;
 
-        assert.equal('function', typeof odata.submit);
-    });
-
-    it('transport option defaults are set', function() {
-        var odata = new OdataTransport();
-
-        assert.equal(odata.options.update.dataType, 'json');
-        assert.equal(odata.options.destroy.dataType, 'json');
-        assert.equal(odata.options.create.dataType, 'json');
-    });
-
-    it('supportss batchUrl setting', function() {
-        var odata = new OdataTransport();
-
-        odata.setBatchDetails(BATCH_URL);
-
-        assert.equal(odata.options.batchUrl, BATCH_URL);
-    });
-
-    it('makes request to batchUrl', function() {
-        var stub = sinon.stub($, 'ajax', function() {
-           return $.Deferred();
-        });
-
-        var odata = new OdataTransport();
-
-        odata.setBatchDetails(BATCH_URL);
-
-        odata.submit({
-          data: {
-            created: [{ }],
-            updated: [],
-            destroyed: []
-          }
-        });
-
-        assert.equal(stub.calledOnce, true);
-        assert.equal(stub.getCall(0).args[0].url, BATCH_URL);
-    });
-
-    function changesets(data) {
-        var matcher = /changeset_(.*)/g;
-
-        var changesets = [];
-
-        var match;
-
-        while (match = matcher.exec(data)) {
-            var changeset = match[1].replace('--', '');
-
-            if (changesets.indexOf(changeset) < 0) {
-              changesets.push(changeset);
-            }
-        }
-
-        return changesets;
-    }
-
-    it('posts every operation as a separate changeset', function() {
-        var stub = sinon.stub($, 'ajax', function() {
-           return $.Deferred();
-        });
-
-        var odata = new OdataTransport();
-
-        odata.setBatchDetails(BATCH_URL);
-
-        odata.submit({
-          data: {
-            created: [{}, {}],
-            updated: [],
-            destroyed: []
-          }
-        });
-
-        var request = stub.getCall(0).args[0].data;
-
-        assert.equal(changesets(request).length, 2);
-    });
-
-    it('invokes success callback with server response', function(done) {
-        var response = '--batchresponse_f93844b1-9742-4a4b-9fad-c100b3b21b31\r\n\
+    var SUCCESS_RESPONSE = '--batchresponse_f93844b1-9742-4a4b-9fad-c100b3b21b31\r\n\
 Content-Type: multipart/mixed; boundary=changesetresponse_cd2111d2-d6c4-4aa9-b8f8-04001c3488be\r\n\
 \r\n\
 --changesetresponse_cd2111d2-d6c4-4aa9-b8f8-04001c3488be\r\n\
@@ -120,34 +39,7 @@ Location: http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData
 --changesetresponse_1153ef9d-e15b-4ef0-b949-c189b6ab683c--\r\n\
 --batchresponse_f93844b1-9742-4a4b-9fad-c100b3b21b31--';
 
-        var stub = sinon.stub($, 'ajax', function(options) {
-            options.complete({ responseText: response}, 'success');
-        });
-
-        var odata = new OdataTransport();
-
-        odata.setBatchDetails(BATCH_URL);
-
-        odata.submit({
-          data: {
-            created: [{}, {}],
-            updated: [],
-            destroyed: []
-          },
-          success: function(result, type) {
-            if (type == 'create') {
-              assert.equal(result.length, 2);
-              assert.equal(result[0].ID, 56);
-              assert.equal(result[1].ID, 55);
-
-              done();
-            }
-          }
-        });
-    });
-
-    it('invokes success and error callbacks', function(done) {
-        var response = '--batchresponse_f93844b1-9742-4a4b-9fad-c100b3b21b31\r\n\
+    var MIXED_RESPONSE = '--batchresponse_f93844b1-9742-4a4b-9fad-c100b3b21b31\r\n\
 Content-Type: multipart/mixed; boundary=changesetresponse_cd2111d2-d6c4-4aa9-b8f8-04001c3488be\r\n\
 \r\n\
 --changesetresponse_cd2111d2-d6c4-4aa9-b8f8-04001c3488be\r\n\
@@ -181,13 +73,77 @@ Location: http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData
 --changesetresponse_1153ef9d-e15b-4ef0-b949-c189b6ab683c--\r\n\
 --batchresponse_f93844b1-9742-4a4b-9fad-c100b3b21b31--';
 
-        var stub = sinon.stub($, 'ajax', function(options) {
-            options.complete({ responseText: response}, 'success');
+    it('transport option defaults are initialized', function() {
+        assert.equal(odata.options.update.dataType, 'json');
+        assert.equal(odata.options.destroy.dataType, 'json');
+        assert.equal(odata.options.create.dataType, 'json');
+    });
+
+    it('supports batchUrl setting', function() {
+        odata.setBatchDetails(BATCH_URL);
+
+        assert.equal(odata.options.batchUrl, BATCH_URL);
+    });
+
+    it('makes request to batchUrl', function() {
+        var stub = sinon.stub($, 'ajax', function() {
+           return $.Deferred();
         });
 
-        var odata = new OdataTransport();
+        odata.submit({
+          data: {
+            created: [{ }],
+            updated: [],
+            destroyed: []
+          }
+        });
 
-        odata.setBatchDetails(BATCH_URL);
+        assert.equal(stub.calledOnce, true);
+        assert.equal(stub.getCall(0).args[0].url, BATCH_URL);
+    });
+
+
+    it('posts operations as a separate changesets', function() {
+        var stub = sinon.stub($, 'ajax', function() {
+           return $.Deferred();
+        });
+
+        odata.submit({
+          data: {
+            created: [{}, {}],
+            updated: [{}],
+            destroyed: [{}]
+          }
+        });
+
+        var request = stub.getCall(0).args[0].data;
+
+        assert.equal(changesets(request).length, 4);
+    });
+
+    it('invokes success callback with server response', function(done) {
+        var stub = stubAjaxWithResponse(SUCCESS_RESPONSE);
+
+        odata.submit({
+          data: {
+            created: [{}, {}],
+            updated: [],
+            destroyed: []
+          },
+          success: function(result, type) {
+            if (type == 'create') {
+              assert.equal(result.length, 2);
+              assert.equal(result[0].ID, 56);
+              assert.equal(result[1].ID, 55);
+
+              done();
+            }
+          }
+        });
+    });
+
+    it('invokes success and error callbacks when creating items', function(done) {
+        var stub = stubAjaxWithResponse(MIXED_RESPONSE);
 
         odata.submit({
           data: {
@@ -211,9 +167,246 @@ Location: http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData
         });
     });
 
+    it('invokes success and error callbacks when updating items', function(done) {
+        var stub = stubAjaxWithResponse(MIXED_RESPONSE);
+
+        odata.submit({
+          data: {
+            created: [],
+            updated: [{}, {}],
+            destroyed: []
+          },
+          success: function(result, type) {
+            if (type == 'update') {
+              assert.equal(result.length, 2);
+              assert.equal(result[0], null);
+              assert.equal(result[1].ID, 55);
+            }
+          },
+          error: function(xhr, status, result) {
+            assert.equal(result.length, 1);
+            assert.equal(result[0].message, 'Error');
+
+            done();
+          }
+        });
+    });
+
+    it('invokes success and error callbacks when destroying items', function(done) {
+        var stub = stubAjaxWithResponse(MIXED_RESPONSE);
+
+        odata.submit({
+          data: {
+            created: [],
+            updated: [],
+            destroyed: [{}, {}],
+          },
+          success: function(result, type) {
+            if (type == 'destroy') {
+              assert.equal(result.length, 2);
+              assert.equal(result[0], null);
+              assert.equal(result[1].ID, 55);
+            }
+          },
+          error: function(xhr, status, result) {
+            assert.equal(result.length, 1);
+            assert.equal(result[0].message, 'Error');
+
+            done();
+          }
+        });
+    });
+
     afterEach(function() {
       if ($.ajax.restore) {
         $.ajax.restore();
       }
     });
+
+    beforeEach(function() {
+      odata = new OdataTransport();
+
+      odata.setBatchDetails(BATCH_URL);
+    })
+
+    // Utilies
+
+    function stubAjaxWithResponse(response) {
+        return sinon.stub($, 'ajax', function(options) {
+            options.complete({ responseText: response}, 'success');
+        });
+    }
+
+    function changesets(data) {
+        var matcher = /changeset_(.*)/g;
+
+        var changesets = [];
+
+        var match;
+
+        while (match = matcher.exec(data)) {
+            var changeset = match[1].replace('--', '');
+
+            if (changesets.indexOf(changeset) < 0) {
+              changesets.push(changeset);
+            }
+        }
+
+        return changesets;
+    }
+});
+
+describe('DataSource', function() {
+
+  it('keeps failed inserted items in dirty state', function(done) {
+    var dataSource = new kendo.data.DataSource({
+      batch: true,
+      schema: {
+        model: { ID: 'id' }
+      },
+      transport: {
+        read: function() {
+        },
+        submit: function(e) {
+         e.success([
+           null,
+           { id: 1}
+         ], 'create');
+        }
+      }
+    });
+
+    dataSource.add({ text: 'fails' });
+    dataSource.add({ text: 'succeeds' });
+
+    dataSource.sync()
+      .then(function() {
+
+        assert.equal(dataSource.at(0).get('id'), null);
+        assert.equal(dataSource.at(0).isNew(), true);
+
+        assert.equal(dataSource.at(1).get('id'), 1);
+        assert.equal(dataSource.at(1).isNew(), false);
+
+        done();
+      })
+  });
+
+  it('keeps failed updated items in dirty state', function(done) {
+    var dataSource = new kendo.data.DataSource({
+      batch: true,
+      schema: {
+        model: { ID: 'id' }
+      },
+      transport: {
+        read: function(options) {
+          options.success([
+            { id: 0, text: '0' },
+            { id: 1, text: '1' }
+          ])
+        },
+        submit: function(e) {
+         e.success([
+           null,
+           { id: 1}
+         ], 'update');
+        }
+      }
+    });
+
+    dataSource.fetch()
+
+    dataSource.at(0).set('text', 'fails')
+    dataSource.at(1).set('text', 'succeeds')
+
+    dataSource.sync()
+      .then(function() {
+        assert.equal(dataSource.at(0).get('text'), 'fails');
+        assert.equal(dataSource.at(0).dirty, true);
+
+        assert.equal(dataSource.at(1).get('text'), 'succeeds');
+        assert.equal(dataSource.at(1).dirty, false);
+
+        done();
+      })
+  });
+
+  it('keeps failed updated items in dirty state', function(done) {
+    var dataSource = new kendo.data.DataSource({
+      batch: true,
+      schema: {
+        model: { ID: 'id' }
+      },
+      transport: {
+        read: function(options) {
+          options.success([
+            { id: 1, text: '0' },
+            { id: 2, text: '1' }
+          ])
+        },
+        submit: function(e) {
+         e.success([
+           null,
+           { id: 2}
+         ], 'update');
+        }
+      }
+    });
+
+    dataSource.fetch();
+
+    dataSource.at(0).set('text', 'fails');
+    dataSource.at(1).set('text', 'succeeds');
+
+    dataSource.sync()
+      .then(function() {
+        assert.equal(dataSource.at(0).get('text'), 'fails');
+        assert.equal(dataSource.at(0).dirty, true);
+
+        assert.equal(dataSource.at(1).get('text'), 'succeeds');
+        assert.equal(dataSource.at(1).dirty, false);
+
+        done();
+      })
+  });
+
+  it('keeps failed destroyed items', function(done) {
+    var dataSource = new kendo.data.DataSource({
+      batch: true,
+      schema: {
+        model: { ID: 'id' }
+      },
+      transport: {
+        read: function(options) {
+          options.success([
+            { id: 1, text: '0' },
+            { id: 2, text: '1' }
+          ])
+        },
+        submit: function(e) {
+         e.success([
+           null,
+           { id: 1 }
+         ], 'destroy');
+        }
+      }
+    });
+
+    dataSource.fetch(function() {
+      var one = dataSource.at(0);
+      var two = dataSource.at(1);
+
+      dataSource.remove(one);
+      dataSource.remove(two);
+
+      dataSource.sync()
+        .then(function() {
+          assert.equal(dataSource.destroyed().length, 1);
+
+          assert.equal(dataSource.total(), 0);
+
+          done();
+        })
+    });
+  });
 });

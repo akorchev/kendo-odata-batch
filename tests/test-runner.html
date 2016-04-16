@@ -12,7 +12,10 @@
     <script src="../node_modules/sinon-browser-only/sinon.js"></script>
     <script src="../kendo.data.odata-batch.js"></script>
     <script>
-      initMochaPhantomJS();
+      if (typeof initMochaPhantomJS == 'function') {
+        initMochaPhantomJS();
+      }
+
       mocha.ui('bdd');
       mocha.reporter('html');
       var expect = chai.expect;

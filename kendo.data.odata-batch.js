@@ -14,7 +14,8 @@
 
             body.push('--changeset_' + changeset);
             body.push('Content-Type: application/http');
-            body.push('Content-Transfer-Encoding: binary', '');
+            body.push('Content-Transfer-Encoding: binary');
+             body.push('Content-ID:' + i + 1, '');
 
             body.push(t + ' ' + d.url + ' HTTP/1.1');
 
@@ -88,13 +89,16 @@
                 result.data = lines[2];
             }
 
+            var payload = result.status >= 200 && result.status < 400 ? result.data : null;
+
             if (request.type == 'POST') {
-                if (result.status == 201) {
-                    data.created.push(result.data);
-                } else {
-                    data.created.push(null);
-                }
+                data.created.push(payload);
+            } else if (request.type == 'PUT') {
+                data.updated.push(payload);
+            } else if (request.type == 'DELETE') {
+                data.destroyed.push(payload);
             }
+
             if (result.status >= 400) {
               data.errors.push(result.data);
             }
@@ -227,4 +231,56 @@
             return Number(d['odata.count']);
         }
     };
+
+    // Patching the Kendo UI DataSource to support mixed (success and error) server responses.
+    kendo.data.DataSource.prototype._accept = function(result) {
+        var that = this;
+        var models = result.models;
+        var response = result.response;
+        var serverGroup = that._isServerGrouped();
+        var pristine = that._pristineData;
+        var type = result.type;
+
+        that.trigger('requestEnd', { response: response, type: type });
+
+        if (response && !$.isEmptyObject(response)) {
+            response = that.reader.parse(response);
+
+            if (that._handleCustomErrors(response)) {
+                return;
+            }
+
+            response = that.reader.data(response);
+
+            if (!$.isArray(response)) {
+                response = [response];
+            }
+        } else {
+            response = $.map(models, function(model) { return model.toJSON(); } );
+        }
+
+        for (var idx = 0, length = models.length; idx < length; idx++) {
+            var item = response[idx];
+
+            if (item === null) {
+              // Null means failed server response - skip everything in this case.
+              continue;
+            }
+
+            if (type !== 'destroy') {
+                models[idx].accept(item);
+
+                if (type === 'create') {
+                    pristine.push(serverGroup ? that._wrapInEmptyGroup(models[idx]) : item);
+                } else if (type === 'update') {
+                    that._updatePristineForModel(models[idx], item);
+                }
+            } else {
+                // Remove the item instead of clearing the _destroyed array which the original code does.
+                that._destroyed.splice($.inArray(that._destroyed, models[idx]), 1);
+
+                that._removePristineForModel(models[idx]);
+            }
+        }
+    }
 })(jQuery, kendo);
