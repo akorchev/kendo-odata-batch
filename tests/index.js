@@ -45,6 +45,46 @@ describe('OData v3', function() {
         assert.equal(stub.getCall(0).args[0].url, BATCH_URL);
     });
 
+    function changesets(data) {
+        var matcher = /changeset_(.*)/g;
+
+        var changesets = [];
+
+        var match;
+
+        while (match = matcher.exec(data)) {
+            var changeset = match[1].replace('--', '');
+
+            if (changesets.indexOf(changeset) < 0) {
+              changesets.push(changeset);
+            }
+        }
+
+        return changesets;
+    }
+
+    it('posts every operation as a separate changeset', function() {
+        var stub = sinon.stub($, 'ajax', function() {
+           return $.Deferred();
+        });
+
+        var odata = new OdataTransport();
+
+        odata.setBatchDetails(BATCH_URL);
+
+        odata.submit({
+          data: {
+            created: [{}, {}],
+            updated: [],
+            destroyed: []
+          }
+        });
+
+        var request = stub.getCall(0).args[0].data;
+
+        assert.equal(changesets(request).length, 2);
+    });
+
     afterEach(function() {
       if ($.ajax.restore) {
         $.ajax.restore();

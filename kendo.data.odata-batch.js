@@ -3,16 +3,18 @@
         var body = [];
         var changeset = kendo.guid();
 
-        body.push('--batch_' + boundary);
-        body.push('Content-Type: multipart/mixed; boundary=changeset_' + changeset, '');
-
         $.each(data, function (i, d) {
             var t = d.type.toUpperCase(), noBody = ['GET', 'DELETE'];
 
+            body.push('--batch_' + boundary);
+
+            var changeset = kendo.guid();
+
+            body.push('Content-Type: multipart/mixed; boundary=changeset_' + changeset, '');
+
             body.push('--changeset_' + changeset);
             body.push('Content-Type: application/http');
-            body.push('Content-Transfer-Encoding: binary');
-            body.push('Content-ID:' + i + 1, '');
+            body.push('Content-Transfer-Encoding: binary', '');
 
             body.push(t + ' ' + d.url + ' HTTP/1.1');
 
@@ -24,9 +26,9 @@
 
             body.push('Host: ' + location.host);
             body.push('', d.data ? JSON.stringify(d.data) : '');
+            body.push('--changeset_' + changeset + '--', '');
         });
 
-        body.push('--changeset_' + changeset + '--', '');
         body.push('--batch_' + boundary + '--', '');
 
         return body.join('\r\n');
