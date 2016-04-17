@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="http://kendo.cdn.telerik.com/2016.1.226/styles/kendo.mobile.all.min.css">
 
     <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-    <script src="http://kendo.cdn.telerik.com/2016.1.226/js/angular.min.js"></script>
     <script src="http://kendo.cdn.telerik.com/2016.1.226/js/jszip.min.js"></script>
     <script src="http://kendo.cdn.telerik.com/2016.1.226/js/kendo.all.min.js"></script>
     <script src="http://kendo.cdn.telerik.com/2016.1.226/js/kendo.aspnetmvc.min.js"></script>
@@ -35,9 +34,12 @@
           }
         ],
         sortable: true,
+        pageable: true,
         dataSource: {
           type: 'odata-v4',
           batch: true,
+          pageSize: 5,
+          serverPaging: true,
           serverSorting: true,
           schema: {
             model: {
@@ -50,19 +52,19 @@
           },
           transport: {
             read: {
-              url: '/V4/(S(lqkaw1wt5qdcwrj1stniy0nc))/TripPinServiceRW/Airlines'
+              url: 'http://localhost:57621/Airlines'
             },
             create: {
-              url: "http://services.odata.org/V4/(S(lqkaw1wt5qdcwrj1stniy0nc))/TripPinServiceRW/Airlines"
+              url: "http://localhost:57621/Airlines"
             },
             update: {
               url: function(item) {
-                return "http://services.odata.org/V4/(S(lqkaw1wt5qdcwrj1stniy0nc))/TripPinServiceRW/Airlines('" + item.AirlineCode + "')";
+                return "http://localhost:57621/Airlines('" + item.AirlineCode + "')";
               }
             },
             destroy: {
               url: function(item) {
-                return "http://services.odata.org/V4/(S(lqkaw1wt5qdcwrj1stniy0nc))/TripPinServiceRW/Airlines('" + item.AirlineCode + "')";
+                return "http://localhost:57621/Airlines('" + item.AirlineCode + "')";
               }
             }
           }
@@ -104,22 +106,22 @@
             }
           },
           transport: {
-            type: 'ODataDemo.Product',
+            type: 'ODataV3.Models.Product',
             read: {
-              url: '/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData.svc/Products',
+              url: 'http://localhost:57608/Products',
               dataType: 'json'
             },
             create: {
-              url: "http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData.svc/Products"
+              url: "http://localhost:57608/Products"
             },
             update: {
               url: function(item) {
-                return "Products(" + item.ID + ")";
+                return "http://localhost:57608/Products(" + item.ID + ")";
               }
             },
             destroy: {
               url: function(item) {
-                return "http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData.svc/Products(" + item.ID + ")";
+                return "http://localhost:57608/Products(" + item.ID + ")";
               }
             }
           }
