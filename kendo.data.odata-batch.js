@@ -15,7 +15,7 @@
             body.push('--changeset_' + changeset);
             body.push('Content-Type: application/http');
             body.push('Content-Transfer-Encoding: binary');
-             body.push('Content-ID:' + i + 1, '');
+            body.push('Content-ID:' + i + 1, '');
 
             body.push(t + ' ' + d.url + ' HTTP/1.1');
 
