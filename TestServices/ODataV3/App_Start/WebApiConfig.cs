@@ -1,5 +1,6 @@
 ﻿using ODataV3.Models;
 using System.Web.Http;
+using System.Web.Http.Cors;
 using System.Web.Http.OData.Batch;
 using System.Web.Http.OData.Builder;
 using System.Web.Http.OData.Extensions;
@@ -10,7 +11,9 @@ namespace ODataV3
     {
         public static void Register(HttpConfiguration config)
         {
-            config.EnableCors();
+            var corsAttr = new EnableCorsAttribute("*", "*", "*");
+            config.EnableCors(corsAttr);
+            
             // Web API routes
             config.MapHttpAttributeRoutes();
 
