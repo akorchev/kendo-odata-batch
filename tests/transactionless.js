@@ -1,6 +1,6 @@
 var BATCH_URL = 'http://example.com';
 
-describe('OData v3', function() {
+describe('useTransaction=false', function() {
     var OdataTransport = kendo.data.transports.odata;
 
     var odata;
@@ -290,14 +290,14 @@ Location: http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData
     }
 
     function changesets(data) {
-        var matcher = /changeset_(.*)/g;
+        var matcher = /changeset_(.*?)--/g;
 
         var changesets = [];
 
         var match;
 
         while (match = matcher.exec(data)) {
-            var changeset = match[1].replace('--', '');
+            var changeset = match[1];
 
             if (changesets.indexOf(changeset) < 0) {
               changesets.push(changeset);
@@ -317,6 +317,7 @@ describe('DataSource', function() {
         model: { ID: 'id' }
       },
       transport: {
+        useTransaction: false,
         read: function() {
         },
         submit: function(e) {
@@ -351,6 +352,7 @@ describe('DataSource', function() {
         model: { ID: 'id' }
       },
       transport: {
+        useTransaction: false,
         read: function(options) {
           options.success([
             { id: 0, text: '0' },
@@ -390,6 +392,7 @@ describe('DataSource', function() {
         model: { ID: 'id' }
       },
       transport: {
+        useTransaction: false,
         read: function(options) {
           options.success([
             { id: 1, text: '0' },
@@ -429,6 +432,7 @@ describe('DataSource', function() {
         model: { ID: 'id' }
       },
       transport: {
+        useTransaction: false,
         read: function(options) {
           options.success([
             { id: 1, text: '0' },

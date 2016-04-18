@@ -1,16 +1,24 @@
 (function ($, kendo) {
     function pack(data, boundary, useTransaction) {
         var body = [];
+
         var changeset = kendo.guid();
+
+        if (useTransaction) {
+            body.push('--batch_' + boundary);
+            body.push('Content-Type: multipart/mixed; boundary=changeset_' + changeset, '');
+        }
 
         $.each(data, function (i, d) {
             var t = d.type.toUpperCase(), noBody = ['GET', 'DELETE'];
 
-            body.push('--batch_' + boundary);
+            if (!useTransaction) {
+                body.push('--batch_' + boundary);
 
-            var changeset = kendo.guid();
+                changeset = kendo.guid();
 
-            body.push('Content-Type: multipart/mixed; boundary=changeset_' + changeset, '');
+                body.push('Content-Type: multipart/mixed; boundary=changeset_' + changeset, '');
+            }
 
             body.push('--changeset_' + changeset);
             body.push('Content-Type: application/http');
@@ -27,24 +35,26 @@
 
             body.push('Host: ' + location.host);
             body.push('', d.data ? JSON.stringify(d.data) : '');
-            body.push('--changeset_' + changeset + '--', '');
+
+            if (!useTransaction) {
+                body.push('--changeset_' + changeset + '--', '');
+            }
         });
+
+        if (useTransaction) {
+            body.push('--changeset_' + changeset + '--', '');
+        }
 
         body.push('--batch_' + boundary + '--', '');
 
         return body.join('\r\n');
     }
 
-    function unpack(xhr, status, params, useTransaction) {
-        var complete = params.complete;
-        var requests = params.data;
+    function splitSingleChangeset(responseText) {
+        return responseText.split(/--changesetresponse_(?:.*)/g).slice(1, -1);
+    }
 
-        if (status != 'success') {
-          return complete.call(this, xhr, status, xhr.responseText);
-        }
-
-        var responseText = xhr.responseText;
-
+    function splitMultipleChangeset(responseText) {
         var matcher = /--changesetresponse_(.*)/g;
 
         var match;
@@ -65,7 +75,23 @@
             }
         }
 
-        var data = {
+        return responses;
+    }
+
+    function unpack(xhr, status, params, useTransaction) {
+        var complete = params.complete;
+        var requests = params.data;
+
+        if (status != 'success') {
+          return complete.call(this, xhr, status, xhr.responseText);
+        }
+
+        var responseText = xhr.responseText;
+
+        var responses = useTransaction ? splitSingleChangeset(responseText) :
+                                         splitMultipleChangeset(responseText);
+
+        var result = {
           created: [],
           updated: [],
           destroyed: [],
@@ -75,7 +101,12 @@
         requests.forEach(function(request, index) {
             var raw = responses[index];
 
-            var lines = raw.split('\r\n\r\n');
+            if (!raw) {
+              // If there is a failure in transactional mode there is only one response
+              return;
+            }
+
+            var lines = $.trim(raw).split('\r\n\r\n');
 
             var response = {};
 
@@ -89,34 +120,42 @@
                 response.data = lines[2];
             }
 
-            var payload = response.status >= 200 && response.status < 400 ? response.data || request.data : null;
+            var success = response.status >= 200 && response.status < 400;
+
+            var payload =  success ? response.data || request.data : null;
 
             if (request.type == 'POST') {
-                data.created.push(payload);
+                if (success || !useTransaction) {
+                    result.created.push(payload);
+                }
             } else if (request.type == 'PUT') {
-                data.updated.push(payload);
+                if (success || !useTransaction) {
+                    result.updated.push(payload);
+                }
             } else if (request.type == 'DELETE') {
-                data.destroyed.push(payload);
+                if (success || !useTransaction) {
+                    result.destroyed.push(payload);
+                }
             }
 
-            if (response.status >= 400) {
-              data.errors.push(response.data);
+            if (!success) {
+                result.errors.push(response.data);
             }
         });
 
-        complete.call(this, xhr, status, data);
+        complete.call(this, xhr, status, result);
     }
 
-    function ajaxBatch(params) {
+    function ajaxBatch(params, useTransaction) {
         var boundary = kendo.guid();
 
         $.ajax({
             type: 'POST',
             url: params.url,
-            data: pack(params.data, boundary),
+            data: pack(params.data, boundary, useTransaction),
             contentType: 'multipart/mixed; boundary=batch_' + boundary,
             complete: params.complete ?
-              function (xhr, status) { unpack(xhr, status, params); } :
+              function (xhr, status) { unpack(xhr, status, params, useTransaction); } :
                 null
         });
     }
@@ -161,9 +200,17 @@
             data: requests,
             complete: function (xhr, status, response) {
                 if (status == 'success') {
-                    e.success(response.created, 'create')
-                    e.success(response.updated, 'update');
-                    e.success(response.destroyed, 'destroy');
+                    if (response.created.length) {
+                        e.success(response.created, 'create')
+                    }
+
+                    if (response.updated.length) {
+                        e.success(response.updated, 'update');
+                    }
+
+                    if (response.destroyed.length) {
+                        e.success(response.destroyed, 'destroy');
+                    }
 
                     if (response.errors.length) {
                         e.error(xhr, 'error', response.errors);
@@ -172,7 +219,7 @@
                     e.error(xhr, status, response);
                 }
             }
-        })
+        }, this.options.useTransaction)
     }
 
     function data(d) {
@@ -201,27 +248,29 @@
 
     kendo.data.transports['odata-v4'] = kendo.data.RemoteTransport.extend({
         init: function (options) {
-            kendo.data.RemoteTransport.fn.init.call(this, $.extend(true, {}, odata4, options));
+            kendo.data.RemoteTransport.fn.init.call(this, $.extend(true, { useTransaction: false }, odata4, options));
+
+            this.useTransaction = this.options.useTransaction;
         },
         submit: submit,
         setBatchDetails: function (batchUrl) {
             this.options.batchUrl = batchUrl;
-        },
-        useTransaction: false
+        }
     });
 
     kendo.data.schemas['odata-v4'].data = data;
 
     kendo.data.transports['odata'] = kendo.data.RemoteTransport.extend({
         init: function (options) {
-            kendo.data.RemoteTransport.fn.init.call(this, $.extend(true, {}, odata, options));
+            kendo.data.RemoteTransport.fn.init.call(this, $.extend(true, { useTransaction: false }, odata, options));
+
+            this.useTransaction = this.options.useTransaction;
         },
         submit: submit,
         setBatchDetails: function (batchUrl, objectType) {
             this.options.batchUrl = batchUrl;
             this.options.type = objectType;
-        },
-        useTransaction: false
+        }
     });
 
     kendo.data.transports['odata'].parameterMap = odata.parameterMap;
@@ -234,8 +283,16 @@
         }
     };
 
+    var transactionalAccept = kendo.data.DataSource.prototype._accept;
+
     // Patching the Kendo UI DataSource to support mixed (success and error) server responses.
     kendo.data.DataSource.prototype._accept = function(result) {
+        var useTransaction = this.transport.useTransaction;
+
+        if (typeof useTransaction === 'undefined' || useTransaction === true) {
+            return transactionalAccept.call(this, result);
+        }
+
         var that = this;
         var models = result.models;
         var response = result.response;
