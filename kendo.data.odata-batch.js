@@ -73,23 +73,23 @@
         };
 
         requests.forEach(function(request, index) {
-            var response = responses[index];
+            var raw = responses[index];
 
-            var lines = response.split('\r\n\r\n');
+            var lines = raw.split('\r\n\r\n');
 
-            var result = {};
+            var response = {};
 
-            result.status = parseInt((function (m) {
+            response.status = parseInt((function (m) {
                 return m || [0, 0];
             })(/HTTP\/1.1 ([0-9]+)/g.exec(lines[1]))[1], 10);
 
             try {
-                result.data = JSON.parse(lines[2])
+                response.data = JSON.parse(lines[2])
             } catch (error) {
-                result.data = lines[2];
+                response.data = lines[2];
             }
 
-            var payload = result.status >= 200 && result.status < 400 ? result.data : null;
+            var payload = response.status >= 200 && response.status < 400 ? response.data || request.data : null;
 
             if (request.type == 'POST') {
                 data.created.push(payload);
@@ -99,8 +99,8 @@
                 data.destroyed.push(payload);
             }
 
-            if (result.status >= 400) {
-              data.errors.push(result.data);
+            if (response.status >= 400) {
+              data.errors.push(response.data);
             }
         });
 

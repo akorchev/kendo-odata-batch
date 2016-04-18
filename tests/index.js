@@ -5,6 +5,37 @@ describe('OData v3', function() {
 
     var odata;
 
+    var UPDATE_RESPONSE = '--batchresponse_91b203e3-d391-4c19-a5ff-3736dbdea6f3\r\n\
+Content-Type: multipart/mixed; boundary=changesetresponse_8cc86f3c-e69f-46a2-9133-602391c3634c\r\n\
+\r\n\
+--changesetresponse_8cc86f3c-e69f-46a2-9133-602391c3634c\r\n\
+Content-Type: application/http\r\n\
+Content-Transfer-Encoding: binary\r\n\
+\r\n\
+HTTP/1.1 204 No Content\r\n\
+X-Content-Type-Options: nosniff\r\n\
+Cache-Control: no-cache\r\n\
+DataServiceVersion: 1.0;\r\n\
+\r\n\
+\r\n\
+--changesetresponse_8cc86f3c-e69f-46a2-9133-602391c3634c--\r\n\
+--batchresponse_91b203e3-d391-4c19-a5ff-3736dbdea6f3\r\n\
+Content-Type: multipart/mixed; boundary=changesetresponse_20151335-5293-411d-9ede-499f0ef3bcbf\r\n\
+\r\n\
+--changesetresponse_20151335-5293-411d-9ede-499f0ef3bcbf\r\n\
+Content-Type: application/http\r\n\
+Content-Transfer-Encoding: binary\r\n\
+\r\n\
+HTTP/1.1 204 No Content\r\n\
+X-Content-Type-Options: nosniff\r\n\
+Cache-Control: no-cache\r\n\
+DataServiceVersion: 1.0;\r\n\
+\r\n\
+\r\n\
+--changesetresponse_20151335-5293-411d-9ede-499f0ef3bcbf--\r\n\
+--batchresponse_91b203e3-d391-4c19-a5ff-3736dbdea6f3--';
+
+
     var SUCCESS_RESPONSE = '--batchresponse_f93844b1-9742-4a4b-9fad-c100b3b21b31\r\n\
 Content-Type: multipart/mixed; boundary=changesetresponse_cd2111d2-d6c4-4aa9-b8f8-04001c3488be\r\n\
 \r\n\
@@ -121,7 +152,7 @@ Location: http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData
         assert.equal(changesets(request).length, 4);
     });
 
-    it('invokes success callback with server response', function(done) {
+    it('invokes success callback with server response on create', function(done) {
         var stub = stubAjaxWithResponse(SUCCESS_RESPONSE);
 
         odata.submit({
@@ -140,6 +171,27 @@ Location: http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData
             }
           }
         });
+    });
+    it('invokes success callback with the posted data on update', function(done) {
+        var stub = stubAjaxWithResponse(UPDATE_RESPONSE);
+
+        odata.submit({
+          data: {
+            created: [],
+            updated: [{ ID: 1 }, { ID: 2 }],
+            destroyed: []
+          },
+          success: function(result, type) {
+            if (type == 'update') {
+              assert.equal(result.length, 2);
+              assert.equal(result[0].ID, 1);
+              assert.equal(result[1].ID, 2);
+
+              done();
+            }
+          }
+        });
+
     });
 
     it('invokes success and error callbacks when creating items', function(done) {
