@@ -5,13 +5,14 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Web.Http;
+using System.Web.Http.Cors;
 using System.Web.OData;
 using System.Web.OData.Query;
 using TestServices;
 
 namespace ODataV4.Controllers
 {
-
+    [EnableCors(origins: "*", headers: "*", methods: "*")]
     public class AirlinesController : ODataController
     {
 

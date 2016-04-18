@@ -6,13 +6,14 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Web.Http;
+using System.Web.Http.Cors;
 using System.Web.Http.OData;
 using System.Web.Http.OData.Query;
 using TestServices;
 
 namespace ODataV3.Controllers
 {
-
+    [EnableCors(origins: "*", headers: "*", methods: "*")]
     public class ProductsController : ODataController
     {
 

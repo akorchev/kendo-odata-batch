@@ -10,6 +10,7 @@ namespace ODataV3
     {
         public static void Register(HttpConfiguration config)
         {
+            config.EnableCors();
             // Web API routes
             config.MapHttpAttributeRoutes();
 
