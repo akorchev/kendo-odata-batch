@@ -1,3 +1,11 @@
+/** 
+ * OData Batch Fix for Kendo UI v0.9.0 (http://github.com/advancedrei/kendo-odata-batch)
+ * Copyright (C) 2016 AdvancedREI, LLC. All Rights Reserved.
+ *
+ * Written by Atanas Korchev.
+ * Licensed under the MIT License: https://opensource.org/licenses/MIT                                                                                                                                                                                                                                  
+*/
+
 (function ($, kendo) {
     function pack(data, boundary, useTransaction) {
         var body = [];
