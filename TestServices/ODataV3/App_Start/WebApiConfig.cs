@@ -11,8 +11,8 @@ namespace ODataV3
     {
         public static void Register(HttpConfiguration config)
         {
-            var corsAttr = new EnableCorsAttribute("*", "*", "*");
-            config.EnableCors(corsAttr);
+            var cors = new EnableCorsAttribute("*", "*", "*");
+            config.EnableCors(cors);
             
             // Web API routes
             config.MapHttpAttributeRoutes();
