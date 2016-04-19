@@ -104,6 +104,42 @@ Location: http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData
 --changesetresponse_1153ef9d-e15b-4ef0-b949-c189b6ab683c--\r\n\
 --batchresponse_f93844b1-9742-4a4b-9fad-c100b3b21b31--';
 
+var GUID_RESPONSE = '--batchresponse_9a307bd5-3bc8-4d3f-a0ef-15ec32654258\r\n\
+Content-Type: multipart/mixed; boundary=changesetresponse_1bfff412-fcec-4e3c-957c-7e81b2807cc1\r\n\
+\r\n\
+--changesetresponse_1bfff412-fcec-4e3c-957c-7e81b2807cc1\r\n\
+Content-Type: application/http\r\n\
+Content-Transfer-Encoding: binary\r\n\
+\r\n\
+HTTP/1.1 201 Created\r\n\
+Location: http://localhost:57608/LedgerEntries(guid\'d8e301d7-8160-49ad-afbe-51d53c92e94a\')\r\n\
+Access-Control-Allow-Origin: *\r\n\
+Content-Type: application/json; charset=utf-8\r\n\
+DataServiceVersion: 3.0\r\n\
+\r\n\
+{\r\n\
+  "odata.metadata":"http://localhost:57608/$metadata#LedgerEntries/@Element","Id":"d8e301d7-8160-49ad-afbe-51d53c92e94a","ScenarioId":"00000000-0000-0000-0000-000000000000","LedgerEntryType":"Income","Description":"asdfasdfasdf","Amount":"75","Conversion":3,"AnnualIncrease":"0","DateApplicable":null,"CreatedById":null,"DateCreated":"2016-04-19T18:20:40.654Z","DateUpdated":"2016-04-19T11:20:51.703125-07:00","Notes":"ffff"\r\n\
+}\r\n\
+--changesetresponse_1bfff412-fcec-4e3c-957c-7e81b2807cc1--\r\n\
+--batchresponse_9a307bd5-3bc8-4d3f-a0ef-15ec32654258\r\n\
+Content-Type: multipart/mixed; boundary=changesetresponse_c46105b1-2b39-4326-ad9d-4400a05b3d1a\r\n\
+\r\n\
+--changesetresponse_c46105b1-2b39-4326-ad9d-4400a05b3d1a\r\n\
+Content-Type: application/http\r\n\
+Content-Transfer-Encoding: binary\r\n\
+\r\n\
+HTTP/1.1 201 Created\r\n\
+Location: http://localhost:57608/LedgerEntries(guid\'78176875-e992-4a39-a330-1ebe0e4cb1a6\')\r\n\
+Access-Control-Allow-Origin: *\r\n\
+Content-Type: application/json; charset=utf-8\r\n\
+DataServiceVersion: 3.0\r\n\
+\r\n\
+{\r\n\
+  "odata.metadata":"http://localhost:57608/$metadata#LedgerEntries/@Element","Id":"78176875-e992-4a39-a330-1ebe0e4cb1a6","ScenarioId":"00000000-0000-0000-0000-000000000000","LedgerEntryType":"Income","Description":"asdf","Amount":"50","Conversion":3,"AnnualIncrease":"0","DateApplicable":null,"CreatedById":null,"DateCreated":"2016-04-19T18:20:40.654Z","DateUpdated":"2016-04-19T11:20:51.703125-07:00","Notes":"asdfasdf"\r\n\
+}\r\n\
+--changesetresponse_c46105b1-2b39-4326-ad9d-4400a05b3d1a--\r\n\
+--batchresponse_9a307bd5-3bc8-4d3f-a0ef-15ec32654258--';
+
     it('transport option defaults are initialized', function() {
         assert.equal(odata.options.update.dataType, 'json');
         assert.equal(odata.options.destroy.dataType, 'json');
@@ -166,6 +202,27 @@ Location: http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData
               assert.equal(result.length, 2);
               assert.equal(result[0].ID, 56);
               assert.equal(result[1].ID, 55);
+
+              done();
+            }
+          }
+        });
+    });
+
+    it('invokes success callback with guid server response on create', function(done) {
+        var stub = stubAjaxWithResponse(GUID_RESPONSE);
+
+        odata.submit({
+          data: {
+            created: [{}, {}],
+            updated: [],
+            destroyed: []
+          },
+          success: function(result, type) {
+            if (type == 'create') {
+              assert.equal(result.length, 2);
+              assert.equal(result[0].Id, 'd8e301d7-8160-49ad-afbe-51d53c92e94a');
+              assert.equal(result[1].Id, '78176875-e992-4a39-a330-1ebe0e4cb1a6');
 
               done();
             }
