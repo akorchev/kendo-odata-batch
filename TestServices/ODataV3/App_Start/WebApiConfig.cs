@@ -19,6 +19,7 @@ namespace ODataV3
 
             ODataConventionModelBuilder builder = new ODataConventionModelBuilder();
             builder.EntitySet<Product>("Products").EntityType.HasKey(c => c.ID);
+            builder.EntitySet<LedgerEntry>("LedgerEntries").EntityType.HasKey(c => c.Id);
             config.Routes.MapODataServiceRoute("odata", "", builder.GetEdmModel(), new DefaultODataBatchHandler(GlobalConfiguration.DefaultServer));
 
         }

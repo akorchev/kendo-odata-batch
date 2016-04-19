@@ -128,5 +128,194 @@
         }
       });
     </script>
+    <h3>OData v3 w/ GUIDs</h3>
+    <div id="grid-v3-guid"></div>
+    <script>
+    jQuery(function() {
+        jQuery("#grid-v3-guid").kendoGrid({
+            "columns": [{
+                "title": "Description",
+                "headerAttributes": {
+                    "data-field": "Description",
+                    "data-title": "Description",
+                    "data-groupable": "false"
+                },
+                "width": "250px",
+                "locked": true,
+                "field": "Description",
+                "groupable": false,
+                "encoded": true,
+                "editor": "\u003cinput class=\"k-textbox\" id=\"Description\" name=\"Description\" type=\"text\" value=\"\" /\u003e\u003cspan class=\"field-validation-valid\" data-valmsg-for=\"Description\" data-valmsg-replace=\"true\"\u003e\u003c/span\u003e"
+            }, {
+                "title": "Amount",
+                "attributes": {
+                    "style": "text-align:right;"
+                },
+                "headerAttributes": {
+                    "data-field": "Amount",
+                    "data-title": "Amount",
+                    "data-groupable": "false"
+                },
+                "width": "120px",
+                "lockable": false,
+                "field": "Amount",
+                "groupable": false,
+                "encoded": true,
+                "editor": "\u003cinput data-val=\"true\" data-val-number=\"The field Amount must be a number.\" data-val-required=\"The Amount field is required.\" id=\"Amount\" min=\"0\" name=\"Amount\" step=\"25\" style=\"width:100%\" type=\"text\" value=\"0\" /\u003e\u003cscript\u003e\r\n\tjQuery(function(){jQuery(\"#Amount\").kendoNumericTextBox({\"format\":\"c0\",\"decimals\":0});});\r\n\u003c/script\u003e\u003cspan class=\"field-validation-valid\" data-valmsg-for=\"Amount\" data-valmsg-replace=\"true\"\u003e\u003c/span\u003e"
+            }, {
+                "title": "Rate",
+                "attributes": {
+                    "style": "text-align:right;"
+                },
+                "headerAttributes": {
+                    "data-field": "AnnualIncrease",
+                    "data-title": "Rate",
+                    "data-groupable": "false"
+                },
+                "width": "100px",
+                "lockable": false,
+                "field": "AnnualIncrease",
+                "format": "{0:P2}",
+                "groupable": false,
+                "encoded": true,
+                "editor": "\u003cinput data-val=\"true\" data-val-number=\"The field Annual Increase must be a number.\" data-val-required=\"The Annual Increase field is required.\" id=\"AnnualIncrease\" max=\"10\" min=\"0\" name=\"AnnualIncrease\" step=\"0.0025\" style=\"width:100%\" type=\"text\" value=\"0\" /\u003e\u003cscript\u003e\r\n\tjQuery(function(){jQuery(\"#AnnualIncrease\").kendoNumericTextBox({\"format\":\"p2\",\"decimals\":4});});\r\n\u003c/script\u003e\u003cspan class=\"field-validation-valid\" data-valmsg-for=\"AnnualIncrease\" data-valmsg-replace=\"true\"\u003e\u003c/span\u003e"
+            }, {
+                "title": "Notes",
+                "headerAttributes": {
+                    "data-field": "Notes",
+                    "data-title": "Notes"
+                },
+                "width": "300px",
+                "lockable": false,
+                "field": "Notes",
+                "encoded": true,
+                "editor": "\u003cinput class=\"k-textbox\" id=\"Notes\" name=\"Notes\" type=\"text\" value=\"\" /\u003e\u003cspan class=\"field-validation-valid\" data-valmsg-for=\"Notes\" data-valmsg-replace=\"true\"\u003e\u003c/span\u003e"
+            }, {
+                "attributes": {
+                    "style": "text-align:center;"
+                },
+                "width": "80px",
+                "lockable": false,
+                "command": [{
+                    "name": "destroy",
+                    "buttonType": "ImageAndText",
+                    "text": " "
+                }]
+            }],
+            "pageable": {
+                "refresh": true,
+                "buttonCount": 10
+            },
+            "sortable": true,
+            "scrollable": {
+                "height": "200px"
+            },
+            "editable": true,
+            "toolbar": ['create', 'save', 'cancel'],
+            "messages": {
+                "noRecords": "No records available."
+            },
+            "dataSource": {
+                "type": (function() {
+                    if (kendo.data.transports['odata']) {
+                        return 'odata';
+                    } else {
+                        throw new Error('The kendo.aspnetmvc.min.js script is not included.');
+                    }
+                })(),
+                "transport": {
+                    "batchUrl": "http://localhost:57608/$batch",
+                    "type": "ODataV3.Models.LedgerEntry",
+                    "read": {
+                        "url": function(data) {
+                            return "http://localhost:57608/LedgerEntries?$filter=LedgerEntryType eq 'Income'";
+                        },
+                        "dataType": "json"
+                    },
+                    "prefix": "",
+                    "update": {
+                        "url": function(data) {
+                            return "http://localhost:57608/LedgerEntries(guid'" + data.Id + "')";
+                        },
+                        "type": "PUT"
+                    },
+                    "create": {
+                        "url": "http://localhost:57608/LedgerEntries",
+                        "type": "POST"
+                    },
+                    "destroy": {
+                        "url": function(data) {
+                            return "http://localhost:57608/LedgerEntries(guid'" + data.Id + "')";
+                        },
+                        "type": "DELETE"
+                    }
+                },
+                "pageSize": 50,
+                "page": 1,
+                "total": 0,
+                "serverPaging": true,
+                "serverSorting": true,
+                "serverFiltering": true,
+                "serverGrouping": true,
+                "serverAggregates": true,
+                "filter": [],
+                "schema": {
+                    "data": "value",
+                    "total": "[\u0027odata.count\u0027]",
+                    "errors": "[\u0027odata.error\u0027]",
+                    "model": {
+                        "id": "Id",
+                        "fields": {
+                            "Id": {
+                                "type": "string",
+                                "defaultValue": "00000000-0000-0000-0000-000000000000"
+                            },
+                            "ScenarioId": {
+                                "type": "string",
+                                "defaultValue": "00000000-0000-0000-0000-000000000000"
+                            },
+                            "LedgerEntryType": {
+                                "type": "string",
+                                "defaultValue": "Income"
+                            },
+                            "Description": {
+                                "type": "string"
+                            },
+                            "Amount": {
+                                "type": "number"
+                            },
+                            "Conversion": {
+                                "type": "number",
+                                "defaultValue": 3
+                            },
+                            "AnnualIncrease": {
+                                "type": "number"
+                            },
+                            "DateApplicable": {
+                                "type": "date",
+                                "defaultValue": null
+                            },
+                            "CreatedById": {
+                                "type": "string",
+                                "defaultValue": null
+                            },
+                            "DateCreated": {
+                                "type": "date"
+                            },
+                            "DateUpdated": {
+                                "type": "date"
+                            },
+                            "Notes": {
+                                "type": "string"
+                            },
+                        }
+                    }
+                },
+                "batch": true,
+            },
+            "navigatable": true
+        });
+    });
+    </script>
   </body>
 </html>

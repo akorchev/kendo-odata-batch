@@ -153,10 +153,13 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\ProductsController.cs" />
+    <Compile Include="Controllers\LedgerEntriesController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\LedgerEntryTypes.cs" />
     <Compile Include="Models\Product.cs" />
+    <Compile Include="Models\LedgerEntry.cs" />
     <Compile Include="ODataHelpers.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
