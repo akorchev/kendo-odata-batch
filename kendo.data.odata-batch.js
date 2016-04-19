@@ -122,7 +122,7 @@
 
             var success = response.status >= 200 && response.status < 400;
 
-            var payload =  success ? response.data || request.data : null;
+            var payload =  success ? response.data || request.data : { __error: true };
 
             if (request.type == 'POST') {
                 if (success || !useTransaction) {
@@ -321,8 +321,8 @@
         for (var idx = 0, length = models.length; idx < length; idx++) {
             var item = response[idx];
 
-            if (item === null) {
-              // Null means failed server response - skip everything in this case.
+            if (item.__error === true) {
+              // Failed server response - skip everything in this case.
               continue;
             }
 

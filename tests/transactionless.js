@@ -206,7 +206,7 @@ Location: http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData
           success: function(result, type) {
             if (type == 'create') {
               assert.equal(result.length, 2);
-              assert.equal(result[0], null);
+              assert.equal(result[0].__error, true);
               assert.equal(result[1].ID, 55);
             }
           },
@@ -231,7 +231,7 @@ Location: http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData
           success: function(result, type) {
             if (type == 'update') {
               assert.equal(result.length, 2);
-              assert.equal(result[0], null);
+              assert.equal(result[0].__error, true);
               assert.equal(result[1].ID, 55);
             }
           },
@@ -256,7 +256,7 @@ Location: http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData
           success: function(result, type) {
             if (type == 'destroy') {
               assert.equal(result.length, 2);
-              assert.equal(result[0], null);
+              assert.equal(result[0].__error, true);
               assert.equal(result[1].ID, 55);
             }
           },
@@ -310,11 +310,19 @@ Location: http://services.odata.org/V3/(S(yrfmnhb3d1xr0g4a105tepiq))/OData/OData
 
 describe('DataSource', function() {
 
+  var guid = kendo.guid();
+  var emptyGuid = guid.replace(/\w/g, '0');
+
   it('keeps failed inserted items in dirty state', function(done) {
     var dataSource = new kendo.data.DataSource({
       batch: true,
       schema: {
-        model: { ID: 'id' }
+        model: {
+          id: 'id',
+          fields: {
+            id: { defaultValue: emptyGuid }
+          }
+        }
       },
       transport: {
         useTransaction: false,
@@ -322,8 +330,8 @@ describe('DataSource', function() {
         },
         submit: function(e) {
          e.success([
-           null,
-           { id: 1}
+           { __error: true },
+           { id: guid }
          ], 'create');
         }
       }
@@ -335,10 +343,10 @@ describe('DataSource', function() {
     dataSource.sync()
       .then(function() {
 
-        assert.equal(dataSource.at(0).get('id'), null);
+        assert.equal(dataSource.at(0).get('id'), emptyGuid);
         assert.equal(dataSource.at(0).isNew(), true);
 
-        assert.equal(dataSource.at(1).get('id'), 1);
+        assert.equal(dataSource.at(1).get('id'), guid);
         assert.equal(dataSource.at(1).isNew(), false);
 
         done();
@@ -349,7 +357,7 @@ describe('DataSource', function() {
     var dataSource = new kendo.data.DataSource({
       batch: true,
       schema: {
-        model: { ID: 'id' }
+        model: { id: 'id' }
       },
       transport: {
         useTransaction: false,
@@ -361,7 +369,7 @@ describe('DataSource', function() {
         },
         submit: function(e) {
          e.success([
-           null,
+           { __error: true },
            { id: 1}
          ], 'update');
         }
@@ -389,7 +397,7 @@ describe('DataSource', function() {
     var dataSource = new kendo.data.DataSource({
       batch: true,
       schema: {
-        model: { ID: 'id' }
+        model: { id: 'id' }
       },
       transport: {
         useTransaction: false,
@@ -401,7 +409,7 @@ describe('DataSource', function() {
         },
         submit: function(e) {
          e.success([
-           null,
+           { __error: true },
            { id: 2}
          ], 'update');
         }
@@ -429,7 +437,7 @@ describe('DataSource', function() {
     var dataSource = new kendo.data.DataSource({
       batch: true,
       schema: {
-        model: { ID: 'id' }
+        model: { id: 'id' }
       },
       transport: {
         useTransaction: false,
@@ -441,7 +449,7 @@ describe('DataSource', function() {
         },
         submit: function(e) {
          e.success([
-           null,
+           { __error: true },
            { id: 1 }
          ], 'destroy');
         }
