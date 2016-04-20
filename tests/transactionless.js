@@ -301,6 +301,25 @@ DataServiceVersion: 3.0\r\n\
         });
     });
 
+    it('merges request data with response data', function(done) {
+        var stub = stubAjaxWithResponse(SUCCESS_RESPONSE);
+
+        odata.submit({
+          data: {
+            created: [],
+            updated: [{ name: 'foo'}, {}],
+            destroyed: []
+          },
+          success: function(result, type) {
+            if (type == 'update') {
+              assert.equal(result.length, 2);
+              assert.equal(result[0].name, 'foo');
+              done();
+            }
+          }
+        });
+    });
+
     it('invokes success and error callbacks when destroying items', function(done) {
         var stub = stubAjaxWithResponse(MIXED_RESPONSE);
 
@@ -532,10 +551,44 @@ describe('DataSource', function() {
   });
 
   it('supports nested objects', function(done) {
+    var item = {
+      "FloorPlan":{
+        "Id":"00ffaedf-11b8-4f0b-81ea-e0bfa94b7f9c",
+        "PropertyId":"cc578123-3673-43db-87c0-25ae2f00e3df",
+        "CreatedById":"4e60e633-0f43-4eae-8b2b-4e976f3bed02",
+        "Name":"2+11",
+        "SquareFootage":650,
+        "Bedrooms":"2.0",
+        "Bathrooms":"1.0",
+        "Notes":null,
+        "TotalUnits":12,
+        "DateCreated":"2015-08-26T21:42:49.293",
+        "DateUpdated":"2015-09-11T12:22:26.193"
+      },"Id":"c2704ac5-f85b-4b9d-9f49-b25cf6501098",
+      "ScenarioId":"ac4c606d-bdce-49f4-9c61-2266d78e8cac",
+      "FloorPlanId":"00ffaedf-11b8-4f0b-81ea-e0bfa94b7f9c",
+      "MarketRent":"1265.0000",
+      "RentInflation":"0.03",
+      "ShouldRaiseRentAnnually":true,
+      "StandardLeaseTerm":36,
+      "MonthsVacant":1,
+      "TurnoverCosts":"250.0000",
+      "RenovationCosts":"1500.0000",
+      "RenovationTime":0,
+      "CostInflation":"0.03",
+      "DateCreated":"2015-09-06T02:42:49.34",
+      "DateUpdated":"2016-04-20T07:01:05.843"
+    };
+
     var dataSource = new kendo.data.DataSource({
       batch: true,
       schema: {
-        model: { id: 'Id' },
+        model: {
+          id: 'Id',
+          fields: {
+            'FloorPlan.Name': { type: 'string' }
+          }
+        },
         data: kendo.data.schemas['odata'].data
       },
       transport: {
@@ -543,40 +596,12 @@ describe('DataSource', function() {
         read: function(options) {
           options.success(
             {
-              "odata.count":"1","value":[
-                {
-                  "FloorPlan":{
-                    "Id":"00ffaedf-11b8-4f0b-81ea-e0bfa94b7f9c",
-                    "PropertyId":"cc578123-3673-43db-87c0-25ae2f00e3df",
-                    "CreatedById":"4e60e633-0f43-4eae-8b2b-4e976f3bed02",
-                    "Name":"2+11",
-                    "SquareFootage":650,
-                    "Bedrooms":"2.0",
-                    "Bathrooms":"1.0",
-                    "Notes":null,
-                    "TotalUnits":12,
-                    "DateCreated":"2015-08-26T21:42:49.293",
-                    "DateUpdated":"2015-09-11T12:22:26.193"
-                  },"Id":"c2704ac5-f85b-4b9d-9f49-b25cf6501098",
-                  "ScenarioId":"ac4c606d-bdce-49f4-9c61-2266d78e8cac",
-                  "FloorPlanId":"00ffaedf-11b8-4f0b-81ea-e0bfa94b7f9c",
-                  "MarketRent":"1265.0000",
-                  "RentInflation":"0.03",
-                  "ShouldRaiseRentAnnually":true,
-                  "StandardLeaseTerm":36,
-                  "MonthsVacant":1,
-                  "TurnoverCosts":"250.0000",
-                  "RenovationCosts":"1500.0000",
-                  "RenovationTime":0,
-                  "CostInflation":"0.03",
-                  "DateCreated":"2015-09-06T02:42:49.34",
-                  "DateUpdated":"2016-04-20T07:01:05.843"
-                }
-              ]
+              "odata.count":"1","value":[ item ]
             });
         },
         submit: function(e) {
          e.success([
+           $.extend({}, item,
            {
              "Id":"c2704ac5-f85b-4b9d-9f49-b25cf6501098",
              "ScenarioId":"ac4c606d-bdce-49f4-9c61-2266d78e8cac",
@@ -592,7 +617,7 @@ describe('DataSource', function() {
              "CostInflation":"0.03",
              "DateCreated":"2015-09-06T06:42:49.34Z",
              "DateUpdated":"2016-04-20T07:52:11.3638222+00:00"
-           }
+           })
          ], 'update');
         }
       }

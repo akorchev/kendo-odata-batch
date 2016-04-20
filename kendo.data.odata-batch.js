@@ -1,9 +1,9 @@
-/** 
+/**
  * OData Batch Fix for Kendo UI v0.9.0 (http://github.com/advancedrei/kendo-odata-batch)
  * Copyright (C) 2016 AdvancedREI, LLC. All Rights Reserved.
  *
  * Written by Atanas Korchev.
- * Licensed under the MIT License: https://opensource.org/licenses/MIT                                                                                                                                                                                                                                  
+ * Licensed under the MIT License: https://opensource.org/licenses/MIT
 */
 
 (function ($, kendo) {
@@ -130,7 +130,7 @@
 
             var success = response.status >= 200 && response.status < 400;
 
-            var payload =  success ? response.data || request.data : { __error: true };
+            var payload =  success ? $.extend({}, request.data, response.data) : { __error: true };
 
             if (request.type == 'POST') {
                 if (success || !useTransaction) {
