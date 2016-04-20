@@ -24,7 +24,20 @@
           var changes = [];
 
           for (var key in source) {
-            if (source[key] != target[key]) {
+            var sourceValue = source[key];
+
+            var targetValue = target[key];
+
+            var sourceType = $.type(sourceValue);
+
+            var targetType = $.type(targetValue);
+
+            if (sourceType == 'date' && targetType == 'date') {
+              sourceValue = sourceValue.getTime();
+              targetValue = targetValue.getTime();
+            }
+
+            if (sourceValue !== targetValue) {
               changes.push(key);
             }
           }
