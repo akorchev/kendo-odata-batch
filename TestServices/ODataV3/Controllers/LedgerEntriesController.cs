@@ -1,6 +1,7 @@
 ﻿using Microsoft.Data.OData;
 using ODataV3.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -30,6 +31,8 @@ namespace ODataV3.Controllers
             {
                 return BadRequest(ex.Message);
             }
+
+            return Ok(new List<LedgerEntry> { new LedgerEntry() });
 
             return Ok(Enumerable.Empty<LedgerEntry>());
         }
