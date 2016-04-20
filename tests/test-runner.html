@@ -1,0 +1,31 @@
+<html>
+  <head>
+    <title> Tests </title>
+    <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
+  </head>
+  <body>
+    <div id="mocha"></div>
+    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="http://kendo.cdn.telerik.com/2016.1.226/js/kendo.all.min.js"></script>
+    <script src="../node_modules/mocha/mocha.js"></script>
+    <script src="../node_modules/chai/chai.js"></script>
+    <script src="../node_modules/sinon-browser-only/sinon.js"></script>
+    <script src="../kendo.data.odata-batch.js"></script>
+    <script>
+      if (typeof initMochaPhantomJS == 'function') {
+        initMochaPhantomJS();
+      }
+
+      mocha.ui('bdd');
+      mocha.reporter('html');
+      var expect = chai.expect;
+      var assert = chai.assert;
+    </script>
+    <script src="transaction.js"></script>
+    <script src="transactionless.js"></script>
+    <script>
+      if (window.mochaPhantomJS) { mochaPhantomJS.run(); }
+      else { mocha.run(); }
+    </script>
+  </body>
+</html>

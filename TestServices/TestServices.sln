@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ODataV3", "ODataV3\ODataV3.csproj", "{5A015531-97B2-4B20-880A-AC673A04C4A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ODataV4", "ODataV4\ODataV4.csproj", "{67A4945E-80B0-4FCF-AA22-C8541F3C04A6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5A015531-97B2-4B20-880A-AC673A04C4A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A015531-97B2-4B20-880A-AC673A04C4A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A015531-97B2-4B20-880A-AC673A04C4A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A015531-97B2-4B20-880A-AC673A04C4A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{67A4945E-80B0-4FCF-AA22-C8541F3C04A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67A4945E-80B0-4FCF-AA22-C8541F3C04A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67A4945E-80B0-4FCF-AA22-C8541F3C04A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67A4945E-80B0-4FCF-AA22-C8541F3C04A6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

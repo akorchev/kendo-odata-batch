@@ -1,13 +1,32 @@
+/** 
+ * OData Batch Fix for Kendo UI v0.9.0 (http://github.com/advancedrei/kendo-odata-batch)
+ * Copyright (C) 2016 AdvancedREI, LLC. All Rights Reserved.
+ *
+ * Written by Atanas Korchev.
+ * Licensed under the MIT License: https://opensource.org/licenses/MIT                                                                                                                                                                                                                                  
+*/
+
 (function ($, kendo) {
-    function pack(data, boundary) {
+    function pack(data, boundary, useTransaction) {
         var body = [];
+
         var changeset = kendo.guid();
 
-        body.push('--batch_' + boundary);
-        body.push('Content-Type: multipart/mixed; boundary=changeset_' + changeset, '');
+        if (useTransaction) {
+            body.push('--batch_' + boundary);
+            body.push('Content-Type: multipart/mixed; boundary=changeset_' + changeset, '');
+        }
 
         $.each(data, function (i, d) {
             var t = d.type.toUpperCase(), noBody = ['GET', 'DELETE'];
+
+            if (!useTransaction) {
+                body.push('--batch_' + boundary);
+
+                changeset = kendo.guid();
+
+                body.push('Content-Type: multipart/mixed; boundary=changeset_' + changeset, '');
+            }
 
             body.push('--changeset_' + changeset);
             body.push('Content-Type: application/http');
@@ -24,70 +43,127 @@
 
             body.push('Host: ' + location.host);
             body.push('', d.data ? JSON.stringify(d.data) : '');
+
+            if (!useTransaction) {
+                body.push('--changeset_' + changeset + '--', '');
+            }
         });
 
-        body.push('--changeset_' + changeset + '--', '');
+        if (useTransaction) {
+            body.push('--changeset_' + changeset + '--', '');
+        }
+
         body.push('--batch_' + boundary + '--', '');
 
         return body.join('\r\n');
     }
 
-    function unpack(xhr, status, complete) {
+    function splitSingleChangeset(responseText) {
+        return responseText.split(/--changesetresponse_(?:.*)/g).slice(1, -1);
+    }
+
+    function splitMultipleChangeset(responseText) {
+        var matcher = /--changesetresponse_(.*)/g;
+
+        var match;
+
+        var responses = []
+
+        while (match = matcher.exec(responseText)) {
+            var start = match.index + match[0].length;
+
+            match = matcher.exec(responseText);
+
+            if (match) {
+              var end = match.index;
+
+              var response = $.trim(responseText.substring(start, end));
+
+              responses.push(response);
+            }
+        }
+
+        return responses;
+    }
+
+    function unpack(xhr, status, params, useTransaction) {
+        var complete = params.complete;
+        var requests = params.data;
+
         if (status != 'success') {
           return complete.call(this, xhr, status, xhr.responseText);
         }
 
-        var response = xhr.responseText;
+        var responseText = xhr.responseText;
 
-        var boundary = '--' + /boundary=(.*)/.exec(response)[1];
+        var responses = useTransaction ? splitSingleChangeset(responseText) :
+                                         splitMultipleChangeset(responseText);
 
-        var payload = response.substring(response.indexOf(boundary))
+        var result = {
+          created: [],
+          updated: [],
+          destroyed: [],
+          errors: []
+        };
 
-        payload = $.trim(payload.substring(0, payload.indexOf(boundary + '--')))
+        requests.forEach(function(request, index) {
+            var raw = responses[index];
 
-        var responses = payload.split(boundary);
+            if (!raw) {
+              // If there is a failure in transactional mode there is only one response
+              return;
+            }
 
-        var data = [];
+            var lines = $.trim(raw).split('\r\n\r\n');
 
-        responses.forEach(function (response) {
-            var lines = response.split('\r\n\r\n');
+            var response = {};
 
-            if (lines.length > 1) {
-                var item = {
-                    data: null
-                };
+            response.status = parseInt((function (m) {
+                return m || [0, 0];
+            })(/HTTP\/1.1 ([0-9]+)/g.exec(lines[1]))[1], 10);
 
-                item.status = parseInt((function (m) {
-                    return m || [0, 0];
-                })(/HTTP\/1.1 ([0-9]+)/g.exec(lines[1]))[1], 10);
+            try {
+                response.data = JSON.parse(lines[2])
+            } catch (error) {
+                response.data = lines[2];
+            }
 
-                if (item.status >= 400) {
-                    status = 'error';
+            var success = response.status >= 200 && response.status < 400;
+
+            var payload =  success ? response.data || request.data : { __error: true };
+
+            if (request.type == 'POST') {
+                if (success || !useTransaction) {
+                    result.created.push(payload);
                 }
-
-                try {
-                    item.data = JSON.parse(lines[2])
-                } catch (error) {
-                    item.data = lines[2];
+            } else if (request.type == 'PUT') {
+                if (success || !useTransaction) {
+                    result.updated.push(payload);
                 }
+            } else if (request.type == 'DELETE') {
+                if (success || !useTransaction) {
+                    result.destroyed.push(payload);
+                }
+            }
 
-                data.push(item)
+            if (!success) {
+                result.errors.push(response.data);
             }
         });
 
-        complete.call(this, xhr, status, data);
+        complete.call(this, xhr, status, result);
     }
 
-    function ajaxBatch(params) {
+    function ajaxBatch(params, useTransaction) {
         var boundary = kendo.guid();
 
         $.ajax({
             type: 'POST',
             url: params.url,
-            data: pack(params.data, boundary),
+            data: pack(params.data, boundary, useTransaction),
             contentType: 'multipart/mixed; boundary=batch_' + boundary,
             complete: params.complete ?
-              function (xnr, status) { unpack(xnr, status, params.complete); } :
+              function (xhr, status) { unpack(xhr, status, params, useTransaction); } :
                 null
         });
     }
@@ -132,20 +208,26 @@
             data: requests,
             complete: function (xhr, status, response) {
                 if (status == 'success') {
-                    var create = response.filter(function (item) {
-                        return item.status == 201;
-                    }).map(function (item) {
-                        return item.data;
-                    })
+                    if (response.created.length) {
+                        e.success(response.created, 'create')
+                    }
 
-                    e.success(create, 'create');
-                    e.success([], 'update');
-                    e.success([], 'destroy');
+                    if (response.updated.length) {
+                        e.success(response.updated, 'update');
+                    }
+
+                    if (response.destroyed.length) {
+                        e.success(response.destroyed, 'destroy');
+                    }
+
+                    if (response.errors.length) {
+                        e.error(xhr, 'error', response.errors);
+                    }
                 } else {
                     e.error(xhr, status, response);
                 }
             }
-        })
+        }, this.options.useTransaction)
     }
 
     function data(d) {
@@ -174,7 +256,9 @@
 
     kendo.data.transports['odata-v4'] = kendo.data.RemoteTransport.extend({
         init: function (options) {
-            kendo.data.RemoteTransport.fn.init.call(this, $.extend(true, {}, odata4, options));
+            kendo.data.RemoteTransport.fn.init.call(this, $.extend(true, { useTransaction: false }, odata4, options));
+
+            this.useTransaction = this.options.useTransaction;
         },
         submit: submit,
         setBatchDetails: function (batchUrl) {
@@ -186,7 +270,9 @@
 
     kendo.data.transports['odata'] = kendo.data.RemoteTransport.extend({
         init: function (options) {
-            kendo.data.RemoteTransport.fn.init.call(this, $.extend(true, {}, odata, options));
+            kendo.data.RemoteTransport.fn.init.call(this, $.extend(true, { useTransaction: false }, odata, options));
+
+            this.useTransaction = this.options.useTransaction;
         },
         submit: submit,
         setBatchDetails: function (batchUrl, objectType) {
@@ -204,4 +290,64 @@
             return Number(d['odata.count']);
         }
     };
+
+    var transactionalAccept = kendo.data.DataSource.prototype._accept;
+
+    // Patching the Kendo UI DataSource to support mixed (success and error) server responses.
+    kendo.data.DataSource.prototype._accept = function(result) {
+        var useTransaction = this.transport.useTransaction;
+
+        if (typeof useTransaction === 'undefined' || useTransaction === true) {
+            return transactionalAccept.call(this, result);
+        }
+
+        var that = this;
+        var models = result.models;
+        var response = result.response;
+        var serverGroup = that._isServerGrouped();
+        var pristine = that._pristineData;
+        var type = result.type;
+
+        that.trigger('requestEnd', { response: response, type: type });
+
+        if (response && !$.isEmptyObject(response)) {
+            response = that.reader.parse(response);
+
+            if (that._handleCustomErrors(response)) {
+                return;
+            }
+
+            response = that.reader.data(response);
+
+            if (!$.isArray(response)) {
+                response = [response];
+            }
+        } else {
+            response = $.map(models, function(model) { return model.toJSON(); } );
+        }
+
+        for (var idx = 0, length = models.length; idx < length; idx++) {
+            var item = response[idx];
+
+            if (item.__error === true) {
+              // Failed server response - skip everything in this case.
+              continue;
+            }
+
+            if (type !== 'destroy') {
+                models[idx].accept(item);
+
+                if (type === 'create') {
+                    pristine.push(serverGroup ? that._wrapInEmptyGroup(models[idx]) : item);
+                } else if (type === 'update') {
+                    that._updatePristineForModel(models[idx], item);
+                }
+            } else {
+                // Remove the item instead of clearing the _destroyed array which the original code does.
+                that._destroyed.splice($.inArray(that._destroyed, models[idx]), 1);
+
+                that._removePristineForModel(models[idx]);
+            }
+        }
+    }
 })(jQuery, kendo);
