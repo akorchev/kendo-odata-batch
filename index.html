@@ -19,6 +19,51 @@
     <h3>OData v4</h3>
     <div id="grid-v4"></div>
     <script>
+      function restoreDirtyStateAfterSync(gridSelector) {
+        function diff(source, target) {
+          var changes = [];
+
+          for (var key in source) {
+            if (source[key] != target[key]) {
+              changes.push(key);
+            }
+          }
+
+          return changes;
+        }
+
+        function columnIndexByField(grid, field) {
+          for (var i = 0; i < grid.columns.length; i++) {
+            if (grid.columns[i].field == field) {
+              return i;
+            }
+          }
+
+          return -1;
+        }
+
+        return function() {
+            var data = this.view();
+            var grid = $(gridSelector).getKendoGrid();
+
+            for (var i = 0; i < data.length; i++) {
+              // If still dirty after sync then something failed
+              if (data[i].dirty) {
+                // Find the table row bound to this data item
+                var tr = $(gridSelector).find('tr[data-uid=' + data[i].uid + ']');
+
+                // Get the changed field names
+                var changes = diff(this._pristineData[i], data[i]);
+
+                changes.forEach(function(field) {
+                  // Add the dirty indicator in the columns bound to changed fields
+                  tr.find('td').eq(columnIndexByField(grid, field)).addClass('k-dirty-cell').prepend('<span class="k-dirty">');
+                });
+              }
+            }
+        }
+      }
+
       $('#grid-v4').kendoGrid({
         editable: true,
         toolbar: ['create', 'save', 'cancel'],
@@ -36,6 +81,7 @@
         sortable: true,
         pageable: true,
         dataSource: {
+          sync: restoreDirtyStateAfterSync('#grid-v4'),
           type: 'odata-v4',
           batch: true,
           pageSize: 5,
@@ -93,6 +139,7 @@
         ],
         pageable: true,
         dataSource: {
+          sync: restoreDirtyStateAfterSync('#grid-v3'),
           type: 'odata',
           batch: true,
           pageSize: 5,
@@ -216,6 +263,7 @@
                 "noRecords": "No records available."
             },
             "dataSource": {
+                sync: restoreDirtyStateAfterSync('#grid-v3-guid'),
                 "type": (function() {
                     if (kendo.data.transports['odata']) {
                         return 'odata';
