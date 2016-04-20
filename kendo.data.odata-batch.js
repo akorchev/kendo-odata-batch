@@ -171,25 +171,34 @@
     var odata = kendo.data.transports['odata'];
     var odata4 = kendo.data.transports['odata-v4'];
 
+    function convertNumbersToStrings(item) {
+        for (var key in item) {
+            var value = item[key];
+
+            var type = $.type(value);
+
+            // Convert numbers to strings to handle Edm.Decimal
+            if (type === 'number') {
+                item[key] = value + '';
+            } else if (type === 'object') {
+                convertNumbersToStrings(value)
+            }
+        }
+    }
+
     function enqueue(items, verb, url, type) {
         return items.map(function (item) {
             if (type) {
                 item['odata.type'] = type;
             }
 
-            for (var key in item) {
-              var value = item[key];
-
-              // Convert numbers to strings to handle Edm.Decimal
-              if (typeof value === 'number') {
-                item[key] = value + '';
-              }
-            }
+            // Convert numbers to strings to handle Edm.Decimal
+            convertNumbersToStrings(item);
 
             return {
                 data: item,
                 type: verb,
-                url: typeof url == 'function' ? url(item) : url
+                url: typeof url === 'function' ? url(item) : url
             }
         });
     }

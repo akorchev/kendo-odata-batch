@@ -229,6 +229,25 @@ DataServiceVersion: 3.0\r\n\
           }
         });
     });
+
+    it('converts numbers to string', function() {
+        var stub = sinon.stub($, 'ajax', function() {
+           return $.Deferred();
+        });
+
+        odata.submit({
+          data: {
+            created: [{ id: 1, child: { id: 2 } }],
+            updated: [],
+            destroyed: []
+          }
+        });
+
+        var request = stub.getCall(0).args[0].data;
+
+        assert.equal(/({.*})/m.exec(request)[1], '{"id":"1","child":{"id":"2"}}');
+    });
+
     it('invokes success callback with the posted data on update', function(done) {
         var stub = stubAjaxWithResponse(UPDATE_RESPONSE);
 
