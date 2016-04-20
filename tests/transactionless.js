@@ -530,4 +530,84 @@ describe('DataSource', function() {
         })
     });
   });
+
+  it('supports nested objects', function(done) {
+    var dataSource = new kendo.data.DataSource({
+      batch: true,
+      schema: {
+        model: { id: 'Id' },
+        data: kendo.data.schemas['odata'].data
+      },
+      transport: {
+        useTransaction: false,
+        read: function(options) {
+          options.success(
+            {
+              "odata.count":"1","value":[
+                {
+                  "FloorPlan":{
+                    "Id":"00ffaedf-11b8-4f0b-81ea-e0bfa94b7f9c",
+                    "PropertyId":"cc578123-3673-43db-87c0-25ae2f00e3df",
+                    "CreatedById":"4e60e633-0f43-4eae-8b2b-4e976f3bed02",
+                    "Name":"2+11",
+                    "SquareFootage":650,
+                    "Bedrooms":"2.0",
+                    "Bathrooms":"1.0",
+                    "Notes":null,
+                    "TotalUnits":12,
+                    "DateCreated":"2015-08-26T21:42:49.293",
+                    "DateUpdated":"2015-09-11T12:22:26.193"
+                  },"Id":"c2704ac5-f85b-4b9d-9f49-b25cf6501098",
+                  "ScenarioId":"ac4c606d-bdce-49f4-9c61-2266d78e8cac",
+                  "FloorPlanId":"00ffaedf-11b8-4f0b-81ea-e0bfa94b7f9c",
+                  "MarketRent":"1265.0000",
+                  "RentInflation":"0.03",
+                  "ShouldRaiseRentAnnually":true,
+                  "StandardLeaseTerm":36,
+                  "MonthsVacant":1,
+                  "TurnoverCosts":"250.0000",
+                  "RenovationCosts":"1500.0000",
+                  "RenovationTime":0,
+                  "CostInflation":"0.03",
+                  "DateCreated":"2015-09-06T02:42:49.34",
+                  "DateUpdated":"2016-04-20T07:01:05.843"
+                }
+              ]
+            });
+        },
+        submit: function(e) {
+         e.success([
+           {
+             "Id":"c2704ac5-f85b-4b9d-9f49-b25cf6501098",
+             "ScenarioId":"ac4c606d-bdce-49f4-9c61-2266d78e8cac",
+             "FloorPlanId":"00ffaedf-11b8-4f0b-81ea-e0bfa94b7f9c",
+             "MarketRent":"1290",
+             "RentInflation":"0.03",
+             "ShouldRaiseRentAnnually":true,
+             "StandardLeaseTerm":36,
+             "MonthsVacant":1,
+             "TurnoverCosts":"250",
+             "RenovationCosts":"1500",
+             "RenovationTime":0,
+             "CostInflation":"0.03",
+             "DateCreated":"2015-09-06T06:42:49.34Z",
+             "DateUpdated":"2016-04-20T07:52:11.3638222+00:00"
+           }
+         ], 'update');
+        }
+      }
+    });
+
+    dataSource.fetch(function() {
+      dataSource.at(0).set('MarketRent', '1290');
+      dataSource.sync()
+        .then(function() {
+          assert.equal(dataSource.at(0).FloorPlan.Name, '2+11');
+          assert.equal(dataSource.at(0).MarketRent, '1290');
+          assert.equal(dataSource.at(0).dirty, false);
+
+          done();
+        })
+    })
+  })
 });
