@@ -1,5 +1,5 @@
 /**
- * OData Batch Fix for Kendo UI v0.9.0 (http://github.com/advancedrei/kendo-odata-batch)
+ * OData Batch Fix for Kendo UI v0.9.5 (http://github.com/advancedrei/kendo-odata-batch)
  * Copyright (C) 2016 AdvancedREI, LLC. All Rights Reserved.
  *
  * Written by Atanas Korchev.
