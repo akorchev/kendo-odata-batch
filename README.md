@@ -1,6 +1,6 @@
 # OData Batch operations with Kendo UI
 
-KendoUI's DataSource supports batching operations. But Telerik never mapped their batching support to OData's built-in batching. AdvancedREI paid to have one of the original members of the Kendo UI team fix this problem, and now we're making it available free to everyone under the MIT license.
+KendoUI's DataSource supports batching operations. But Telerik never mapped their batching support to OData's built-in batching. AdvancedREI contracted with one of the original members of the Kendo UI team fix this problem, and now we're making it available free to everyone under the MIT license.
 
 ## Usage
 
